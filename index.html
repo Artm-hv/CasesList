@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>To-Do List Pro</title>
+    <meta name="theme-color" content="#060608">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="header-top">
+                <div class="header-title-box">
+                    <h1>Завдання</h1>
+                    <p id="date-display"></p>
+                </div>
+                <div class="header-actions">
+                    <div class="streak-badge" id="streak-badge">🔥 0</div>
+                    <button class="icon-btn" id="btn-analytics" aria-label="Аналітика">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10l-6 4-6-4v10M12 20V4l-6 4-6-4v16M6 20v-4l-6 4-6-4v8"/></svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- View 1: List -->
+        <main class="content tab-view active" id="view-list">
+            <div class="filters-container">
+                <div class="search-box">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21L16.65 16.65"/></svg>
+                    <input type="text" id="search-input" placeholder="Знайти завдання...">
+                </div>
+                <div class="quick-filters">
+                    <label class="filter-toggle"><input type="checkbox" id="filter-today"><span class="toggle-pill">Сьогодні</span></label>
+                    <label class="filter-toggle"><input type="checkbox" id="filter-hide-completed"><span class="toggle-pill">Приховати виконані</span></label>
+                </div>
+                <div class="tabs-container">
+                    <div class="tabs" id="category-tabs">
+                        <button class="tab active" data-cat="all">Всі</button>
+                        <button class="tab" data-cat="work">Робота</button>
+                        <button class="tab" data-cat="home">Дім</button>
+                        <button class="tab" data-cat="personal">Особисте</button>
+                    </div>
+                </div>
+            </div>
+
+            <ul id="active-tasks" class="todo-list"></ul>
+            <div class="completed-section">
+                <button id="toggle-completed" class="toggle-btn">
+                    Виконані (<span id="completed-count">0</span>)
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9L12 15L18 9"/></svg>
+                </button>
+                <ul id="completed-tasks" class="todo-list collapsed"></ul>
+            </div>
+            
+            <!-- We add margin to account for bottom nav -->
+            <div style="height: 48px;"></div>
+        </main>
+
+        <!-- View 2: Calendar -->
+        <main class="content tab-view" id="view-calendar" style="display: none;">
+            <div class="calendar-controls">
+                <button id="cal-prev" class="icon-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+                <h2 id="cal-month-title">Березень 2026</h2>
+                <button id="cal-next" class="icon-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+            </div>
+            
+            <div class="calendar-views-toggle">
+                <button class="cal-view-btn active" data-view="month">Місяць</button>
+                <button class="cal-view-btn" data-view="week">Тиждень</button>
+                <button class="cal-view-btn" data-view="day">День</button>
+            </div>
+            
+            <div id="calendar-grid-container">
+                <div class="cal-dow-header">
+                    <span>Пн</span><span>Вв</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Нд</span>
+                </div>
+                <div id="calendar-grid" class="calendar-grid">
+                    <!-- dynamically injected cells -->
+                </div>
+            </div>
+            
+            <div style="height: 48px;"></div>
+        </main>
+
+        <!-- View 3: Settings -->
+        <main class="content tab-view" id="view-settings" style="display: none;">
+            <h2>Налаштування</h2>
+            <div style="margin-top: 24px;">
+                <button id="mock-google-sync" class="secondary-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.51 5.44-3.95 0-7.14-3.11-7.14-6.95 0-3.85 3.19-6.96 7.14-6.96 1.83 0 3.48.66 4.67 1.8l2.06-2.06c-1.8-1.68-4.22-2.71-6.73-2.71-5.59 0-10.12 4.45-10.12 9.93 0 5.48 4.53 9.93 10.12 9.93 5.43 0 9.87-3.9 9.87-9.58 0-.67-.08-1.07-.16-1.57z"/></svg>
+                    Синхронізація Google Calendar
+                </button>
+                <p style="font-size: 13px; color: var(--text-secondary); text-align: center; margin-top: 8px;">OAuth 2.0 API (В розробці)</p>
+            </div>
+        </main>
+
+        <!-- FAB Add -->
+        <button id="fab-add" class="fab" aria-label="Додати">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5V19M5 12H19"/></svg>
+        </button>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+             <button class="nav-btn active" data-target="view-list">
+                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+                 <span>Список</span>
+             </button>
+             <button class="nav-btn" data-target="view-calendar">
+                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                 <span>Календар</span>
+             </button>
+             <button class="nav-btn" data-target="view-settings">
+                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                 <span>Налаштування</span>
+             </button>
+        </nav>
+
+        <div id="overlay" class="overlay"></div>
+
+        <!-- Sheet: Додавання задачі -->
+        <div id="bottom-sheet" class="bottom-sheet">
+            <div class="sheet-header">
+                <h2 id="sheet-title">Нове завдання</h2>
+                <button id="close-sheet" class="icon-btn">✖</button>
+            </div>
+            <form id="task-form">
+                <input type="hidden" id="task-id">
+                <div class="form-group">
+                    <label>Назва</label>
+                    <input type="text" id="task-title" required placeholder="Що плануєте зробити?" autocomplete="off">
+                </div>
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label>Категорія</label>
+                        <select id="task-category"><option value="work">Робота</option><option value="home">Дім</option><option value="personal" selected>Особисте</option></select>
+                    </div>
+                    <div class="form-group half">
+                        <label>Пріоритет</label>
+                        <select id="task-priority"><option value="high">Високий</option><option value="medium" selected>Середній</option><option value="low">Низький</option></select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label>Дедлайн</label>
+                        <input type="datetime-local" id="task-date">
+                    </div>
+                    <div class="form-group half">
+                        <label>Повторення</label>
+                        <select id="task-recurrence"><option value="none">Ніколи</option><option value="daily">Щодня</option><option value="weekly">Щотижня</option><option value="monthly">Щомісяця</option></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Опис</label>
+                    <textarea id="task-desc" rows="2" placeholder="Додайте деталі..."></textarea>
+                </div>
+                <button type="submit" class="primary-btn">Зберегти завдання</button>
+            </form>
+        </div>
+
+        <!-- Sheet: Аналітика -->
+        <div id="analytics-modal" class="bottom-sheet">
+             <div class="sheet-header">
+                <h2>📊 Ваша активність</h2>
+                <button id="close-analytics" class="icon-btn">✖</button>
+             </div>
+             <div class="chart-container"><canvas id="analytics-chart"></canvas></div>
+             <p class="analytics-subtext">Виконано завдань за 7 днів</p>
+        </div>
+
+        <!-- Modal: Pomodoro Таймер -->
+        <div id="pomodoro-modal" class="modal-overlay">
+            <div class="pomodoro-card">
+                <h2 id="pomo-task-title">Фокус</h2>
+                <div class="pomodoro-timer-container">
+                    <svg class="pomodoro-svg" viewBox="0 0 100 100"><circle class="pomodoro-bg" cx="50" cy="50" r="45"></circle><circle class="pomodoro-progress" id="pomodoro-circle" cx="50" cy="50" r="45"></circle></svg>
+                    <div class="pomodoro-time" id="pomodoro-time">25:00</div>
+                </div>
+                <div class="pomodoro-controls">
+                    <button id="pomo-start-btn" class="primary-btn">Старт</button>
+                    <button id="pomo-stop-btn" class="danger-btn">Скинути</button>
+                </div>
+                <button id="pomo-close-btn" class="close-pomo-btn">Закрити</button>
+            </div>
+        </div>
+
+        <!-- Daily Tasks Sheet (from Calendar View) -->
+        <div id="daily-tasks-sheet" class="bottom-sheet">
+             <div class="sheet-header">
+                <h2 id="daily-sheet-title">Завдання</h2>
+                <button id="close-daily-sheet" class="icon-btn">✖</button>
+             </div>
+             <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Утримуйте комірку календаря, щоб додати швидке завдання сюди.</p>
+             <ul id="daily-tasks-list" class="todo-list"></ul>
+        </div>
+        
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
