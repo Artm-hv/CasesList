@@ -402,6 +402,10 @@ header p {
    color: var(--warning-color);
 }
 
+.icon-btn.bell-btn {
+   color: var(--primary-color);
+}
+
 .toggle-btn {
    background: none;
    border: none;

@@ -262,6 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="task-actions">
                 ${!task.completed ? `<button class="icon-btn pomo-btn">⏱️</button>` : ''}
+                ${!task.completed && task.dueDate ? `<button class="icon-btn bell-btn">🔔</button>` : ''}
                 <button class="icon-btn edit-btn">✎</button>
                 <button class="icon-btn delete-btn">❌</button>
             </div>
@@ -285,6 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (!task.completed) li.querySelector('.pomo-btn').addEventListener('click', () => openPomodoro(task.title));
+        if (!task.completed && task.dueDate) li.querySelector('.bell-btn').addEventListener('click', () => generateICS(task));
         li.querySelector('.edit-btn').addEventListener('click', () => openSheet(task));
         li.querySelector('.delete-btn').addEventListener('click', () => {
             li.style.transform = 'scale(0.9)'; li.style.opacity = '0';
