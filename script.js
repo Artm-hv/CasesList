@@ -29,6 +29,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const fDate = (ds) => ds ? new Date(ds).toLocaleString('uk-UA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
     const esc = (str) => str ? str.replace(/[&<>'"]/g, t => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[t] || t)) : '';
 
+    const generateICS = (task) => {
+        const fmtDate = (d) => d.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z';
+        const start = new Date(task.dueDate);
+        const end = new Date(start.getTime() + 30 * 60000);
+        const ics = [
+            'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//To-Do Pro//UA', 'CALSCALE:GREGORIAN',
+            'BEGIN:VEVENT', `UID:${task.id}@todo.pro`, `DTSTAMP:${fmtDate(new Date())}`,
+            `DTSTART:${fmtDate(start)}`, `DTEND:${fmtDate(end)}`, `SUMMARY:${task.title}`,
+            `DESCRIPTION:${task.description || ''}`,
+            'BEGIN:VALARM', 'TRIGGER:-PT0M', 'ACTION:DISPLAY', `DESCRIPTION:${task.title}`, 'END:VALARM',
+            'END:VEVENT', 'END:VCALENDAR'
+        ].join('\r\n');
+        
+        const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+        const file = new File([blob], `To-Do_${task.id}.ics`, { type: 'text/calendar' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({
+                files: [file],
+                title: 'Нагадування',
+                text: 'Додати в календар: ' + task.title
+            }).catch(err => console.error(err));
+        } else {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = `Нагадування_${task.id}.ics`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+    };
+
     // INIT DATE
     const d = new Date().toLocaleDateString('uk-UA', { weekday: 'long', month: 'long', day: 'numeric' });
     const df = document.getElementById('date-display');
