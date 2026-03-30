@@ -42,20 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
             'END:VEVENT', 'END:VCALENDAR'
         ].join('\r\n');
         
-        const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-        const file = new File([blob], `To-Do_${task.id}.ics`, { type: 'text/calendar' });
-        
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({
-                files: [file],
-                title: 'Нагадування',
-                text: 'Додати в календар: ' + task.title
-            }).catch(err => console.error(err));
-        } else {
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob); a.download = `Нагадування_${task.id}.ics`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        }
+        // Trick iOS into parsing Calendar natively via data URI
+        const uri = "data:text/calendar;charset=utf8," + encodeURIComponent(ics);
+        const a = document.createElement('a');
+        a.href = uri;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     };
 
     // INIT DATE
