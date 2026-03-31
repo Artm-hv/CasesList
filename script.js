@@ -22,12 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
         daily: { sheet: document.getElementById('daily-tasks-sheet'), list: document.getElementById('daily-tasks-list'), title: document.getElementById('daily-sheet-title'), close: document.getElementById('close-daily-sheet') },
         gamification: { streakBadge: document.getElementById('streak-badge'), btnAnalytics: document.getElementById('btn-analytics'), modalAnalytics: document.getElementById('analytics-modal'), closeAnalytics: document.getElementById('close-analytics') },
         pomo: { modal: document.getElementById('pomodoro-modal'), title: document.getElementById('pomo-task-title'), time: document.getElementById('pomodoro-time'), circle: document.getElementById('pomodoro-circle'), start: document.getElementById('pomo-start-btn'), stop: document.getElementById('pomo-stop-btn'), close: document.getElementById('pomo-close-btn') },
-        reminder: { sheet: document.getElementById('reminder-sheet'), btnGcal: document.getElementById('btn-export-gcal'), close: document.getElementById('close-reminder-sheet') },
         micBtn: document.getElementById('mic-btn')
     };
 
     const state = { search: '', category: 'all' };
-    let currentReminderTask = null;
     const fDate = (ds) => ds ? new Date(ds).toLocaleString('uk-UA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
     const esc = (str) => str ? str.replace(/[&<>'"]/g, t => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[t] || t)) : '';
 
@@ -155,23 +153,8 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.sheet.classList.remove('open'); UI.gamification.modalAnalytics?.classList.remove('open');
         UI.daily.sheet.classList.remove('open');
         if (UI.history.sheet) UI.history.sheet.classList.remove('open');
-        if (UI.reminder.sheet) UI.reminder.sheet.classList.remove('open');
         UI.overlay.classList.remove('open');
     });
-
-    if (UI.reminder.btnGcal) {
-        UI.reminder.btnGcal.addEventListener('click', () => {
-            if (currentReminderTask) {
-                generateGCalLink(currentReminderTask);
-                UI.reminder.sheet.classList.remove('open');
-                UI.overlay.classList.remove('open');
-            }
-        });
-        UI.reminder.close.addEventListener('click', () => {
-            UI.reminder.sheet.classList.remove('open');
-            UI.overlay.classList.remove('open');
-        });
-    }
 
     if (UI.history.btn) {
         UI.history.btn.addEventListener('click', () => {
@@ -311,11 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (!task.completed) li.querySelector('.pomo-btn').addEventListener('click', () => openPomodoro(task.title));
-        if (!task.completed && task.dueDate) li.querySelector('.bell-btn').addEventListener('click', () => {
-            currentReminderTask = task;
-            UI.reminder.sheet.classList.add('open');
-            UI.overlay.classList.add('open');
-        });
+        if (!task.completed && task.dueDate) li.querySelector('.bell-btn').addEventListener('click', () => generateGCalLink(task));
         li.querySelector('.edit-btn').addEventListener('click', () => openSheet(task));
         li.querySelector('.delete-btn').addEventListener('click', () => {
             li.style.transform = 'scale(0.9)'; li.style.opacity = '0';
