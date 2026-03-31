@@ -234,6 +234,26 @@
             </div>
         </div>
 
+        <!-- Sheet: Налаштування нагадування -->
+        <div id="reminder-sheet" class="bottom-sheet">
+            <div class="sheet-header">
+                <h2>Нагадування</h2>
+                <button id="close-reminder-sheet" class="icon-btn">✖</button>
+            </div>
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label>Нагадати за...</label>
+                <select id="reminder-offset">
+                    <option value="0">Вчасно</option>
+                    <option value="5" selected>5 хвилин</option>
+                    <option value="10">10 хвилин</option>
+                    <option value="30">30 хвилин</option>
+                    <option value="60">1 годину</option>
+                    <option value="1440">1 день</option>
+                </select>
+            </div>
+            <button id="btn-export-ics" class="primary-btn">Додати в Календар</button>
+        </div>
+
         <!-- Daily Tasks Sheet (from Calendar View) -->
         <div id="daily-tasks-sheet" class="bottom-sheet">
             <div class="sheet-header">

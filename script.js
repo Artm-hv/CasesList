@@ -22,23 +22,33 @@ document.addEventListener('DOMContentLoaded', () => {
         daily: { sheet: document.getElementById('daily-tasks-sheet'), list: document.getElementById('daily-tasks-list'), title: document.getElementById('daily-sheet-title'), close: document.getElementById('close-daily-sheet') },
         gamification: { streakBadge: document.getElementById('streak-badge'), btnAnalytics: document.getElementById('btn-analytics'), modalAnalytics: document.getElementById('analytics-modal'), closeAnalytics: document.getElementById('close-analytics') },
         pomo: { modal: document.getElementById('pomodoro-modal'), title: document.getElementById('pomo-task-title'), time: document.getElementById('pomodoro-time'), circle: document.getElementById('pomodoro-circle'), start: document.getElementById('pomo-start-btn'), stop: document.getElementById('pomo-stop-btn'), close: document.getElementById('pomo-close-btn') },
+        reminder: { sheet: document.getElementById('reminder-sheet'), offset: document.getElementById('reminder-offset'), btn: document.getElementById('btn-export-ics'), close: document.getElementById('close-reminder-sheet') },
         micBtn: document.getElementById('mic-btn')
     };
 
     const state = { search: '', category: 'all' };
+    let currentReminderTask = null;
     const fDate = (ds) => ds ? new Date(ds).toLocaleString('uk-UA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
     const esc = (str) => str ? str.replace(/[&<>'"]/g, t => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[t] || t)) : '';
 
-    const generateICS = (task) => {
+    const generateICS = (task, offsetMinutes = 5) => {
         const fmtDate = (d) => d.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z';
         const start = new Date(task.dueDate);
         const end = new Date(start.getTime() + 30 * 60000);
+        
+        let alarmTrigger = '-PT0M';
+        if (offsetMinutes > 0) {
+            alarmTrigger = `-PT${offsetMinutes}M`;
+        } else if (offsetMinutes < 0) {
+           alarmTrigger = `PT${Math.abs(offsetMinutes)}M`;
+        }
+
         const ics = [
             'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//To-Do Pro//UA', 'CALSCALE:GREGORIAN',
             'BEGIN:VEVENT', `UID:${task.id}@todo.pro`, `DTSTAMP:${fmtDate(new Date())}`,
             `DTSTART:${fmtDate(start)}`, `DTEND:${fmtDate(end)}`, `SUMMARY:${task.title}`,
             `DESCRIPTION:${task.description || ''}`,
-            'BEGIN:VALARM', 'TRIGGER:-PT0M', 'ACTION:DISPLAY', `DESCRIPTION:${task.title}`, 'END:VALARM',
+            'BEGIN:VALARM', `TRIGGER:${alarmTrigger}`, 'ACTION:DISPLAY', `DESCRIPTION:${task.title}`, 'END:VALARM',
             'END:VEVENT', 'END:VCALENDAR'
         ].join('\r\n');
         
@@ -178,8 +188,24 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.sheet.classList.remove('open'); UI.gamification.modalAnalytics?.classList.remove('open');
         UI.daily.sheet.classList.remove('open');
         if (UI.history.sheet) UI.history.sheet.classList.remove('open');
+        if (UI.reminder.sheet) UI.reminder.sheet.classList.remove('open');
         UI.overlay.classList.remove('open');
     });
+
+    if (UI.reminder.btn) {
+        UI.reminder.btn.addEventListener('click', () => {
+            if (currentReminderTask) {
+                const offset = parseInt(UI.reminder.offset.value, 10);
+                generateICS(currentReminderTask, offset);
+                UI.reminder.sheet.classList.remove('open');
+                UI.overlay.classList.remove('open');
+            }
+        });
+        UI.reminder.close.addEventListener('click', () => {
+            UI.reminder.sheet.classList.remove('open');
+            UI.overlay.classList.remove('open');
+        });
+    }
 
     if (UI.history.btn) {
         UI.history.btn.addEventListener('click', () => {
@@ -319,7 +345,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (!task.completed) li.querySelector('.pomo-btn').addEventListener('click', () => openPomodoro(task.title));
-        if (!task.completed && task.dueDate) li.querySelector('.bell-btn').addEventListener('click', () => generateICS(task));
+        if (!task.completed && task.dueDate) li.querySelector('.bell-btn').addEventListener('click', () => {
+            currentReminderTask = task;
+            UI.reminder.sheet.classList.add('open');
+            UI.overlay.classList.add('open');
+        });
         li.querySelector('.edit-btn').addEventListener('click', () => openSheet(task));
         li.querySelector('.delete-btn').addEventListener('click', () => {
             li.style.transform = 'scale(0.9)'; li.style.opacity = '0';
