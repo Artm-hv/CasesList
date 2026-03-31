@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         daily: { sheet: document.getElementById('daily-tasks-sheet'), list: document.getElementById('daily-tasks-list'), title: document.getElementById('daily-sheet-title'), close: document.getElementById('close-daily-sheet') },
         gamification: { streakBadge: document.getElementById('streak-badge'), btnAnalytics: document.getElementById('btn-analytics'), modalAnalytics: document.getElementById('analytics-modal'), closeAnalytics: document.getElementById('close-analytics') },
         pomo: { modal: document.getElementById('pomodoro-modal'), title: document.getElementById('pomo-task-title'), time: document.getElementById('pomodoro-time'), circle: document.getElementById('pomodoro-circle'), start: document.getElementById('pomo-start-btn'), stop: document.getElementById('pomo-stop-btn'), close: document.getElementById('pomo-close-btn') },
-        reminder: { sheet: document.getElementById('reminder-sheet'), offset: document.getElementById('reminder-offset'), btn: document.getElementById('btn-export-ics'), close: document.getElementById('close-reminder-sheet') },
+        reminder: { sheet: document.getElementById('reminder-sheet'), offset: document.getElementById('reminder-offset'), btnIcs: document.getElementById('btn-export-ics'), btnGcal: document.getElementById('btn-export-gcal'), close: document.getElementById('close-reminder-sheet') },
         micBtn: document.getElementById('mic-btn')
     };
 
@@ -52,24 +52,23 @@ document.addEventListener('DOMContentLoaded', () => {
             'END:VEVENT', 'END:VCALENDAR'
         ].join('\r\n');
         
-        const file = new File([ics], 'task.ics', { type: 'text/calendar' });
+        const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'task.ics';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
 
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({
-                files: [file],
-                title: task.title
-            }).catch(console.error);
-        } else {
-            const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'task.ics';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        }
+    const generateGCalLink = (task) => {
+        const fmtDate = (d) => d.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z';
+        const start = new Date(task.dueDate);
+        const end = new Date(start.getTime() + 30 * 60000);
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&dates=${fmtDate(start)}/${fmtDate(end)}&details=${encodeURIComponent(task.description || '')}`;
+        window.open(url, '_blank');
     };
 
     // INIT DATE
@@ -192,11 +191,18 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.overlay.classList.remove('open');
     });
 
-    if (UI.reminder.btn) {
-        UI.reminder.btn.addEventListener('click', () => {
+    if (UI.reminder.btnIcs) {
+        UI.reminder.btnIcs.addEventListener('click', () => {
             if (currentReminderTask) {
                 const offset = parseInt(UI.reminder.offset.value, 10);
                 generateICS(currentReminderTask, offset);
+                UI.reminder.sheet.classList.remove('open');
+                UI.overlay.classList.remove('open');
+            }
+        });
+        UI.reminder.btnGcal.addEventListener('click', () => {
+            if (currentReminderTask) {
+                generateGCalLink(currentReminderTask);
                 UI.reminder.sheet.classList.remove('open');
                 UI.overlay.classList.remove('open');
             }
