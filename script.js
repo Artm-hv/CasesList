@@ -42,14 +42,24 @@ document.addEventListener('DOMContentLoaded', () => {
             'END:VEVENT', 'END:VCALENDAR'
         ].join('\r\n');
         
-        // Trick iOS into parsing Calendar natively via data URI
-        const uri = "data:text/calendar;charset=utf8," + encodeURIComponent(ics);
-        const a = document.createElement('a');
-        a.href = uri;
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const file = new File([ics], 'task.ics', { type: 'text/calendar' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({
+                files: [file],
+                title: task.title
+            }).catch(console.error);
+        } else {
+            const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'task.ics';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
     };
 
     // INIT DATE
