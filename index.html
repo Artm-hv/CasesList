@@ -240,20 +240,11 @@
                 <h2>Нагадування</h2>
                 <button id="close-reminder-sheet" class="icon-btn">✖</button>
             </div>
-            <div class="form-group" style="margin-bottom: 24px;">
-                <label>Нагадати за...</label>
-                <select id="reminder-offset">
-                    <option value="0">Вчасно</option>
-                    <option value="5" selected>5 хвилин</option>
-                    <option value="10">10 хвилин</option>
-                    <option value="30">30 хвилин</option>
-                    <option value="60">1 годину</option>
-                    <option value="1440">1 день</option>
-                </select>
-            </div>
+            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; line-height: 1.5;">
+                Google Календар не підтримує передачу точного часу попередження автоматично. Ви зможете налаштувати його безпосередньо у вікні створення події.
+            </p>
             <div style="display: flex; flex-direction: column; gap: 12px;">
-                <button id="btn-export-gcal" class="primary-btn" style="background: linear-gradient(135deg, #34a853, #1e8e3e);">Відкрити в Google Calendar</button>
-                <button id="btn-export-ics" class="secondary-btn">Завантажити Apple (.ics)</button>
+                <button id="btn-export-gcal" class="primary-btn">Відкрити в Google Calendar</button>
             </div>
         </div>
 
