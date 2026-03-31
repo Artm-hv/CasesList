@@ -7,6 +7,7 @@
     <title>To-Do List Pro</title>
     <meta name="theme-color" content="#060608">
     <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -213,25 +214,6 @@
             </div>
             <div class="chart-container"><canvas id="analytics-chart"></canvas></div>
             <p class="analytics-subtext">Виконано завдань за 7 днів</p>
-        </div>
-
-        <!-- Modal: Pomodoro Таймер -->
-        <div id="pomodoro-modal" class="modal-overlay">
-            <div class="pomodoro-card">
-                <h2 id="pomo-task-title">Фокус</h2>
-                <div class="pomodoro-timer-container">
-                    <svg class="pomodoro-svg" viewBox="0 0 100 100">
-                        <circle class="pomodoro-bg" cx="50" cy="50" r="45"></circle>
-                        <circle class="pomodoro-progress" id="pomodoro-circle" cx="50" cy="50" r="45"></circle>
-                    </svg>
-                    <div class="pomodoro-time" id="pomodoro-time">25:00</div>
-                </div>
-                <div class="pomodoro-controls">
-                    <button id="pomo-start-btn" class="primary-btn">Старт</button>
-                    <button id="pomo-stop-btn" class="danger-btn">Скинути</button>
-                </div>
-                <button id="pomo-close-btn" class="close-pomo-btn">Закрити</button>
-            </div>
         </div>
 
         <!-- Daily Tasks Sheet (from Calendar View) -->

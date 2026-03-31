@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         daily: { sheet: document.getElementById('daily-tasks-sheet'), list: document.getElementById('daily-tasks-list'), title: document.getElementById('daily-sheet-title'), close: document.getElementById('close-daily-sheet') },
         gamification: { streakBadge: document.getElementById('streak-badge'), btnAnalytics: document.getElementById('btn-analytics'), modalAnalytics: document.getElementById('analytics-modal'), closeAnalytics: document.getElementById('close-analytics') },
-        pomo: { modal: document.getElementById('pomodoro-modal'), title: document.getElementById('pomo-task-title'), time: document.getElementById('pomodoro-time'), circle: document.getElementById('pomodoro-circle'), start: document.getElementById('pomo-start-btn'), stop: document.getElementById('pomo-stop-btn'), close: document.getElementById('pomo-close-btn') },
         micBtn: document.getElementById('mic-btn')
     };
 
@@ -109,15 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.gamification.closeAnalytics.addEventListener('click', () => { UI.gamification.modalAnalytics.classList.remove('open'); UI.overlay.classList.remove('open'); });
     }
 
-    // POMODORO
-    let pomoInterval = null; let pomoTimeLeft = 25 * 60; let pomoTotalTime = 25 * 60; let pomoRunning = false; const pomoCircumference = 282.74;
-    const updatePomoUI = () => { const min = Math.floor(pomoTimeLeft / 60).toString().padStart(2, '0'); const sec = (pomoTimeLeft % 60).toString().padStart(2, '0'); UI.pomo.time.textContent = `${min}:${sec}`; UI.pomo.circle.style.strokeDashoffset = pomoCircumference - (pomoTimeLeft / pomoTotalTime) * pomoCircumference; };
-    const openPomodoro = (taskName) => { UI.pomo.title.textContent = taskName; UI.pomo.modal.classList.add('open'); pomoRunning = false; clearInterval(pomoInterval); pomoTimeLeft = pomoTotalTime; UI.pomo.start.textContent = 'Старт'; updatePomoUI(); };
-    if (UI.pomo.start) {
-        UI.pomo.start.addEventListener('click', () => { if (pomoRunning) { clearInterval(pomoInterval); pomoRunning = false; UI.pomo.start.textContent = 'Продовжити'; return; } pomoRunning = true; UI.pomo.start.textContent = 'Пауза'; pomoInterval = setInterval(() => { pomoTimeLeft--; updatePomoUI(); if (pomoTimeLeft <= 0) { clearInterval(pomoInterval); pomoRunning = false; UI.pomo.start.textContent = 'Старт'; if ('Notification' in window && Notification.permission === 'granted') new Notification('Фокус завершено!', { body: 'Час для перерви.' }); } }, 1000); });
-        UI.pomo.stop.addEventListener('click', () => { clearInterval(pomoInterval); pomoRunning = false; pomoTimeLeft = pomoTotalTime; UI.pomo.start.textContent = 'Старт'; updatePomoUI(); });
-        UI.pomo.close.addEventListener('click', () => { clearInterval(pomoInterval); pomoRunning = false; UI.pomo.modal.classList.remove('open'); });
-    }
 
 
 
@@ -268,11 +258,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${task.description ? `<p class="todo-desc">${esc(task.description)}</p>` : ''}
                 ${dh}
             </div>
-            <div class="task-actions">
-                ${!task.completed ? `<button class="icon-btn pomo-btn">⏱️</button>` : ''}
-                ${!task.completed && task.dueDate ? `<button class="icon-btn bell-btn">🔔</button>` : ''}
-                <button class="icon-btn edit-btn">✎</button>
-                <button class="icon-btn delete-btn">❌</button>
+            <div class="task-actions" style="gap:12px;">
+                ${!task.completed && task.dueDate ? `<button class="icon-btn bell-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>` : ''}
+                <button class="icon-btn edit-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                <button class="icon-btn delete-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
             </div>
         `;
 
@@ -293,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
             await dbQuery('readwrite', 'put', task); renderList(); renderCalendar();
         });
 
-        if (!task.completed) li.querySelector('.pomo-btn').addEventListener('click', () => openPomodoro(task.title));
         if (!task.completed && task.dueDate) li.querySelector('.bell-btn').addEventListener('click', () => generateGCalLink(task));
         li.querySelector('.edit-btn').addEventListener('click', () => openSheet(task));
         li.querySelector('.delete-btn').addEventListener('click', () => {
