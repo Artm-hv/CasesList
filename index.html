@@ -11,7 +11,8 @@
     <link rel="icon" href="apple-touch-icon.png">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
 </head>
 
 <body>
@@ -106,7 +107,56 @@
             <div style="height: 48px;"></div>
         </main>
 
-        <!-- View 3: Settings -->
+        
+        
+        
+        <!-- View 3: Habits Tracker -->
+        <main class="content tab-view" id="view-habits" style="display: none;">
+            <div class="ht-container">
+                <div class="ht-header-bar">
+                    <div class="ht-header-left">
+                        <div class="ht-brand">ТРЕКЕР ЗВИЧОК</div>
+                        <div class="ht-nav-row">
+                            <button class="icon-btn-sm" id="habits-prev-month">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+                            </button>
+                            <span class="ht-month-txt" id="habits-month-title">Травень 2026</span>
+                            <button class="icon-btn-sm" id="habits-next-month">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="ht-header-chart">
+                        <div class="ht-chart-lbl">ЩОДЕННИЙ ПРОГРЕС</div>
+                        <svg class="ht-line-svg" viewBox="0 0 400 50" preserveAspectRatio="none">
+                            <polygon id="habits-line-fill" points="" fill="rgba(179,136,255,0.15)"/>
+                            <polyline id="habits-line-path" points="" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="ht-header-donut">
+                        <svg class="ht-donut-svg" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
+                            <circle id="habits-donut-ring" cx="18" cy="18" r="15" fill="none" stroke="var(--primary-color)" stroke-width="4" stroke-dasharray="94.2 94.2" stroke-dashoffset="94.2" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition: stroke-dashoffset 0.8s ease-out;" />
+                        </svg>
+                        <div class="ht-donut-pct" id="habits-donut-pct">0%</div>
+                    </div>
+                </div>
+                <div class="ht-table-wrap">
+                    <div class="ht-table" id="habits-table"></div>
+                </div>
+                <div class="ht-footer-bar">
+                    <div class="ht-footer-label">ТИЖНЕВИЙ ПРОГРЕС</div>
+                    <div class="ht-footer-donuts" id="habits-weekly-donuts"></div>
+                </div>
+                <button id="btn-add-habit" class="ht-add-btn">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5V19M5 12H19"/></svg>
+                    Додати звичку
+                </button>
+            </div>
+            <div style="height:56px"></div>
+        </main>
+
+        <!-- View 4: Settings -->
         <main class="content tab-view" id="view-settings" style="display: none;">
             <h2>Налаштування</h2>
             <div style="margin-top: 24px;">
@@ -141,6 +191,13 @@
                     <path d="M16 2v4M8 2v4M3 10h18" />
                 </svg>
                 <span>Календар</span>
+            </button>
+            <button class="nav-btn" data-target="view-habits">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11l3 3L22 4" />
+                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                </svg>
+                <span>Привички</span>
             </button>
             <button class="nav-btn" data-target="view-settings">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
@@ -235,6 +292,38 @@
                 <button id="close-history-sheet" class="icon-btn">✖</button>
             </div>
             <ul id="completed-tasks" class="todo-list" style="margin-bottom: 40px;"></ul>
+        </div>
+
+        <!-- Sheet: Habit Form -->
+        <div id="habit-sheet" class="bottom-sheet">
+            <div class="sheet-header">
+                <h2 id="habit-sheet-title">Нова звичка</h2>
+                <button id="close-habit-sheet" class="icon-btn">✖</button>
+            </div>
+            <form id="habit-form">
+                <input type="hidden" id="habit-id">
+                <div class="form-group">
+                    <label>Назва</label>
+                    <input type="text" id="habit-title" required placeholder="Наприклад: Тренування" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Емодзі</label>
+                    <input type="text" id="habit-emoji" placeholder="🏃" maxlength="4"
+                        style="width:80px;text-align:center;font-size:24px;">
+                </div>
+                <div class="form-row" style="gap:12px; margin-top:8px;">
+                    <button type="submit" class="primary-btn" style="flex:1;">Зберегти</button>
+                    <button type="button" id="habit-delete-btn" class="danger-btn"
+                        style="flex:0 0 auto; display:none; background:rgba(255,82,82,0.15); color:var(--danger-color); border-color:rgba(255,82,82,0.3);">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </form>
         </div>
 
     </div>
