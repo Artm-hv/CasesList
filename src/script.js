@@ -438,8 +438,9 @@ document.addEventListener('DOMContentLoaded', () => {
         tbl.style.display = 'grid';
         tbl.style.gridTemplateColumns = cols;
         if (fb) {
-            fb.style.display = 'grid';
-            fb.style.gridTemplateColumns = cols;
+            fb.style.display = 'flex';
+            fb.style.flexDirection = 'column';
+            fb.style.gap = '12px';
         }
         if (!habits.length) {
             tbl.style.gridTemplateColumns = '1fr';
@@ -519,9 +520,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const color = WK_COLORS[wi % WK_COLORS.length]; const offset = WK_C - (wpct / 100) * WK_C;
             const wr = weekColRanges[wi];
             const item = document.createElement('div'); item.className = 'hw-item';
-            item.style.gridColumn = `${wr.start} / ${wr.end}`;
-            item.innerHTML = `<div class="hw-ring-wrap"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="${WK_R}" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="3"/><circle cx="18" cy="18" r="${WK_R}" fill="none" stroke="${color}" stroke-width="3" stroke-dasharray="${WK_C.toFixed(1)} ${WK_C.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition:stroke-dashoffset .5s"/></svg><span class="hw-pct">${wpct}%</span></div><div class="hw-label">\u0422\u0438\u0436.${wi+1}</div><div class="hw-counts">${ws.done}/${ws.total}</div>`;
-            fb.appendChild(item);
+            item.innerHTML = `<div class="hw-ring-wrap"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="${WK_R}" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="3"/><circle cx="18" cy="18" r="${WK_R}" fill="none" stroke="${color}" stroke-width="3" stroke-dasharray="${WK_C.toFixed(1)} ${WK_C.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition:stroke-dashoffset .5s"/></svg><span class="hw-pct">${wpct}%</span></div><div class="hw-label">Тиж.${wi+1}</div><div class="hw-counts">${ws.done}/${ws.total}</div>`;
+            UI.habits.weeklyDonuts.appendChild(item);
         });
     };
 

@@ -1116,25 +1116,33 @@ input[type="datetime-local"] {
 .wk-5 { background: rgba(100,181,246,0.08) !important; color: #64b5f6 !important; }
 
 .ht-footer-bar {
-   display: grid;
-   align-items: center;
+   display: flex;
+   flex-direction: column;
+   gap: 16px;
    border-top: 1px solid var(--border-color);
-   padding: 10px 12px;
+   padding: 20px 16px;
    background: rgba(255,255,255,0.01);
 }
 .ht-footer-label {
-   font-size: 9px;
+   font-size: 10px;
    font-weight: 900;
-   letter-spacing: 1px;
+   letter-spacing: 1.5px;
    color: var(--text-secondary);
    text-transform: uppercase;
+   text-align: center;
 }
-.hw-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.hw-ring-wrap { position: relative; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
-.hw-ring-wrap svg { width: 42px; height: 42px; }
-.hw-pct { position: absolute; font-size: 10px; font-weight: 900; color: var(--text-primary); }
-.hw-label { font-size: 8px; font-weight: 800; color: var(--text-secondary); }
-.hw-counts { font-size: 8px; color: var(--text-secondary); opacity: 0.5; }
+.ht-footer-donuts {
+   display: flex;
+   justify-content: space-around;
+   align-items: center;
+   width: 100%;
+}
+.hw-item { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+.hw-ring-wrap { position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
+.hw-ring-wrap svg { width: 48px; height: 48px; }
+.hw-pct { position: absolute; font-size: 11px; font-weight: 900; color: var(--text-primary); }
+.hw-label { font-size: 9px; font-weight: 800; color: var(--text-secondary); }
+.hw-counts { font-size: 9px; color: var(--text-secondary); opacity: 0.5; }
 
 .ht-add-btn {
    display: flex;
