@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         daily: { sheet: document.getElementById('daily-tasks-sheet'), list: document.getElementById('daily-tasks-list'), title: document.getElementById('daily-sheet-title'), close: document.getElementById('close-daily-sheet') },
         gamification: { streakBadge: document.getElementById('streak-badge'), btnAnalytics: document.getElementById('btn-analytics'), modalAnalytics: document.getElementById('analytics-modal'), closeAnalytics: document.getElementById('close-analytics') },
         micBtn: document.getElementById('mic-btn'),
-                habits: {
+        habits: {
             table: document.getElementById('habits-table'),
             weeklyDonuts: document.getElementById('habits-weekly-donuts'),
             linePath: document.getElementById('habits-line-path'),
@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const completeSound = new Audio('assets/ready_sound.mp3');
     const state = { search: '', category: 'all' };
     const fDate = (ds) => ds ? new Date(ds).toLocaleString('uk-UA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
     const esc = (str) => str ? str.replace(/[&<>'"]/g, t => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[t] || t)) : '';
@@ -298,6 +299,8 @@ document.addEventListener('DOMContentLoaded', () => {
         li.querySelector('.checkbox').addEventListener('click', async () => {
             const wasCompleted = task.completed; task.completed = !task.completed;
             if (!wasCompleted) {
+                completeSound.currentTime = 0;
+                completeSound.play().catch(e => console.log('Sound error:', e));
                 task.completionDate = Date.now(); // Record date
                 if (task.recurrence && task.recurrence !== 'none') {
                     const clone = { ...task, id: Date.now().toString() + Math.random().toString(36).substr(2, 5), completed: false, notified: false, completionDate: null };
@@ -404,8 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ================= HABITS TRACKER (CSS Grid, today-only) =================
     let habitsDate = new Date();
-    const WK_COLORS = ['#b388ff','#69f0ae','#ffb74d','#ff5252','#64b5f6'];
-    const DAY_NAMES = ['\u041f\u043d','\u0412\u0442','\u0421\u0440','\u0427\u0442','\u041f\u0442','\u0421\u0431','\u041d\u0434'];
+    const WK_COLORS = ['#b388ff', '#69f0ae', '#ffb74d', '#ff5252', '#64b5f6'];
+    const DAY_NAMES = ['\u041f\u043d', '\u0412\u0442', '\u0421\u0440', '\u0427\u0442', '\u041f\u0442', '\u0421\u0431', '\u041d\u0434'];
     const DONUT_R = 15, DONUT_C = 2 * Math.PI * DONUT_R;
     const WK_R = 12, WK_C = 2 * Math.PI * WK_R;
     const getWeeks = (y, m) => {
@@ -418,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return weeks;
     };
-    const dayKey = d => `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
+    const dayKey = d => `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
     const renderHabits = async () => {
         const y = habitsDate.getFullYear(), m = habitsDate.getMonth();
         const dim = new Date(y, m + 1, 0).getDate();
@@ -457,8 +460,8 @@ document.addEventListener('DOMContentLoaded', () => {
         weeks.forEach((wk, wi) => {
             const start = colIdx, end = colIdx + wk.length;
             weekColRanges.push({ start, end, days: wk });
-            const lbl = document.createElement('div'); lbl.className = `ht-wk-label wk-${wi+1}`;
-            lbl.textContent = `\u0422\u0418\u0416\u0414\u0415\u041d\u042c ${wi+1}`;
+            const lbl = document.createElement('div'); lbl.className = `ht-wk-label wk-${wi + 1}`;
+            lbl.textContent = `\u0422\u0418\u0416\u0414\u0415\u041d\u042c ${wi + 1}`;
             lbl.style.gridColumn = `${start} / ${end}`; lbl.style.gridRow = '1'; tbl.appendChild(lbl);
             colIdx = end;
         });
@@ -469,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let d = 1; d <= dim; d++) {
             const dow = new Date(y, m, d).getDay() || 7;
             const dh = document.createElement('div'); dh.className = 'ht-day-hd';
-            dh.innerHTML = `${DAY_NAMES[dow-1]}<span class="dn">${d}</span>`;
+            dh.innerHTML = `${DAY_NAMES[dow - 1]}<span class="dn">${d}</span>`;
             dh.style.gridColumn = `${d + 1}`; dh.style.gridRow = '2'; tbl.appendChild(dh);
         }
         const dailyData = {}; for (let d = 1; d <= dim; d++) dailyData[d] = { done: 0, total: habits.length };
@@ -510,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return `${x.toFixed(1)},${yV.toFixed(1)}`;
         });
         if (UI.habits.linePath) UI.habits.linePath.setAttribute('points', pts.join(' '));
-        if (UI.habits.lineFill) UI.habits.lineFill.setAttribute('points', `${pad},${svgH} ${pts.join(' ')} ${(svgW-pad).toFixed(1)},${svgH}`);
+        if (UI.habits.lineFill) UI.habits.lineFill.setAttribute('points', `${pad},${svgH} ${pts.join(' ')} ${(svgW - pad).toFixed(1)},${svgH}`);
         let totalD = 0, totalP = 0; weekStats.forEach(ws => { totalD += ws.done; totalP += ws.total; });
         const overallPct = totalP > 0 ? Math.round(totalD / totalP * 100) : 0;
         if (UI.habits.donutPct) UI.habits.donutPct.textContent = overallPct + '%';
@@ -520,12 +523,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const color = WK_COLORS[wi % WK_COLORS.length]; const offset = WK_C - (wpct / 100) * WK_C;
             const wr = weekColRanges[wi];
             const item = document.createElement('div'); item.className = 'hw-item';
-            item.innerHTML = `<div class="hw-ring-wrap"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="${WK_R}" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="3"/><circle cx="18" cy="18" r="${WK_R}" fill="none" stroke="${color}" stroke-width="3" stroke-dasharray="${WK_C.toFixed(1)} ${WK_C.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition:stroke-dashoffset .5s"/></svg><span class="hw-pct">${wpct}%</span></div><div class="hw-label">Тиж.${wi+1}</div><div class="hw-counts">${ws.done}/${ws.total}</div>`;
+            item.innerHTML = `<div class="hw-ring-wrap"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="${WK_R}" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="3"/><circle cx="18" cy="18" r="${WK_R}" fill="none" stroke="${color}" stroke-width="3" stroke-dasharray="${WK_C.toFixed(1)} ${WK_C.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition:stroke-dashoffset .5s"/></svg><span class="hw-pct">${wpct}%</span></div><div class="hw-label">Тиж.${wi + 1}</div><div class="hw-counts">${ws.done}/${ws.total}</div>`;
             UI.habits.weeklyDonuts.appendChild(item);
         });
     };
 
-    
+
     const toggleHabitDay = async (id, dk) => {
         const h = await dbHabits('readonly', 'get', id); if (!h) return;
         if (!h.days) h.days = {}; h.days[dk] = !h.days[dk];
@@ -558,8 +561,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = UI.habits.inputId.value; if (!id) return;
         if (confirm('\u0412\u0438\u0434\u0430\u043b\u0438\u0442\u0438 \u0446\u044e \u0437\u0432\u0438\u0447\u043a\u0443?')) { await dbHabits('readwrite', 'delete', id); closeHabitSheet(); renderHabits(); }
     });
-    if (UI.habits.prev) UI.habits.prev.addEventListener('click', () => { habitsDate.setMonth(habitsDate.getMonth()-1); renderHabits(); });
-    if (UI.habits.next) UI.habits.next.addEventListener('click', () => { habitsDate.setMonth(habitsDate.getMonth()+1); renderHabits(); });
+    if (UI.habits.prev) UI.habits.prev.addEventListener('click', () => { habitsDate.setMonth(habitsDate.getMonth() - 1); renderHabits(); });
+    if (UI.habits.next) UI.habits.next.addEventListener('click', () => { habitsDate.setMonth(habitsDate.getMonth() + 1); renderHabits(); });
 
     // BOOTSTRAP
     initDB().then(() => { renderList(); renderCalendar(); });
