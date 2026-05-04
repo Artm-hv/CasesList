@@ -44,40 +44,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    let audioCtx = null;
-    let soundBuffer = null;
+    const completeSound = new Audio(SOUND_B64);
+    completeSound.preload = 'auto';
 
-    if (AudioContext) {
-        audioCtx = new AudioContext();
-        fetch('assets/ready_sound.mp3')
-            .then(res => res.arrayBuffer())
-            .then(buf => audioCtx.decodeAudioData(buf))
-            .then(decoded => { soundBuffer = decoded; })
-            .catch(e => console.log('Audio fetch error', e));
-
-        const unlockAudio = () => {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const b = audioCtx.createBuffer(1, 1, 22050);
-            const s = audioCtx.createBufferSource();
-            s.buffer = b;
-            s.connect(audioCtx.destination);
-            if (s.start) s.start(0); else s.noteOn(0);
+    // iOS Audio Unlock Pattern
+    let audioUnlocked = false;
+    const unlockAudio = () => {
+        if (audioUnlocked) return;
+        completeSound.play().then(() => {
+            completeSound.pause();
+            completeSound.currentTime = 0;
+            audioUnlocked = true;
             document.body.removeEventListener('touchstart', unlockAudio);
             document.body.removeEventListener('click', unlockAudio);
-        };
-        document.body.addEventListener('touchstart', unlockAudio, { once: false });
-        document.body.addEventListener('click', unlockAudio, { once: false });
-    }
-
-    const playCompleteSound = () => {
-        if (!audioCtx || !soundBuffer) return;
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const source = audioCtx.createBufferSource();
-        source.buffer = soundBuffer;
-        source.connect(audioCtx.destination);
-        if (source.start) source.start(0); else source.noteOn(0);
+        }).catch(e => {
+            // Error means it wasn't allowed yet, keep listeners
+        });
     };
+    document.body.addEventListener('touchstart', unlockAudio, { once: false });
+    document.body.addEventListener('click', unlockAudio, { once: false });
 
     const state = { search: '', category: 'all' };
     const fDate = (ds) => ds ? new Date(ds).toLocaleString('uk-UA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
@@ -340,7 +325,8 @@ document.addEventListener('DOMContentLoaded', () => {
         li.querySelector('.checkbox').addEventListener('click', async () => {
             const wasCompleted = task.completed; task.completed = !task.completed;
             if (!wasCompleted) {
-                playCompleteSound();
+                completeSound.currentTime = 0;
+                completeSound.play().catch(e => console.log('Sound error:', e));
                 task.completionDate = Date.now(); // Record date
                 if (task.recurrence && task.recurrence !== 'none') {
                     const clone = { ...task, id: Date.now().toString() + Math.random().toString(36).substr(2, 5), completed: false, notified: false, completionDate: null };
