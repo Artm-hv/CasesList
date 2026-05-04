@@ -358,6 +358,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let placeholder = null;
     let startY = 0;
     let startTop = 0;
+    let autoScrollInterval = null;
+    let lastClientX = 0;
+    let lastClientY = 0;
 
     const startDrag = (e, li) => {
         if (li.classList.contains('completed')) return;
@@ -391,15 +394,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('touchend', onDragEnd);
     };
 
-    const onDragMove = (e) => {
+    const handleOverlap = (clientX, clientY) => {
         if (!draggingEl) return;
-        e.preventDefault();
-        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-        const deltaY = clientY - startY;
-        draggingEl.style.top = `${startTop + deltaY}px`;
-
         draggingEl.style.visibility = 'hidden';
-        const elUnder = document.elementFromPoint(e.type === 'touchmove' ? e.touches[0].clientX : e.clientX, clientY);
+        const elUnder = document.elementFromPoint(clientX, clientY);
         draggingEl.style.visibility = 'visible';
 
         if (!elUnder) return;
@@ -415,8 +413,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const onDragMove = (e) => {
+        if (!draggingEl) return;
+        e.preventDefault();
+        lastClientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+        lastClientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+        
+        const deltaY = lastClientY - startY;
+        draggingEl.style.top = `${startTop + deltaY}px`;
+
+        handleOverlap(lastClientX, lastClientY);
+
+        const contentEl = draggingEl.closest('.content');
+        if (contentEl) {
+            const rect = contentEl.getBoundingClientRect();
+            const threshold = 100;
+            if (lastClientY < rect.top + threshold) {
+                startAutoScroll(-1, contentEl);
+            } else if (lastClientY > rect.bottom - threshold) {
+                startAutoScroll(1, contentEl);
+            } else {
+                stopAutoScroll();
+            }
+        }
+    };
+
+    const startAutoScroll = (direction, contentEl) => {
+        if (autoScrollInterval) return;
+        autoScrollInterval = setInterval(() => {
+            contentEl.scrollTop += direction * 15;
+            handleOverlap(lastClientX, lastClientY);
+        }, 16);
+    };
+
+    const stopAutoScroll = () => {
+        if (autoScrollInterval) {
+            clearInterval(autoScrollInterval);
+            autoScrollInterval = null;
+        }
+    };
+
     const onDragEnd = async () => {
         if (!draggingEl) return;
+        
+        stopAutoScroll();
         
         document.removeEventListener('mousemove', onDragMove);
         document.removeEventListener('touchmove', onDragMove);
