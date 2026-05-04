@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateStreaks = async () => {
         const tasks = await dbQuery('readonly', 'getAll');
         const completedTasks = tasks.filter(t => t.completed && t.completionDate);
-        if (completedTasks.length === 0) { UI.gamification.streakBadge.innerHTML = 'рџ”Ґ 0'; return; }
+        if (completedTasks.length === 0) { UI.gamification.streakBadge.innerHTML = '🔥 0'; return; }
 
         let dates = [...new Set(completedTasks.map(t => new Date(t.completionDate).toLocaleDateString('en-CA')))].sort().reverse();
         let streak = 0;
@@ -113,10 +113,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const yesterdayStr = yesterday.toLocaleDateString('en-CA');
 
         let currentDateToCheck = dates.includes(todayStr) ? todayStr : (dates.includes(yesterdayStr) ? yesterdayStr : null);
-        if (!currentDateToCheck) { UI.gamification.streakBadge.innerHTML = 'рџ”Ґ 0'; return; }
+        if (!currentDateToCheck) { UI.gamification.streakBadge.innerHTML = '🔥 0'; return; }
         let dCheck = new Date(currentDateToCheck);
         while (dates.includes(dCheck.toLocaleDateString('en-CA'))) { streak++; dCheck.setDate(dCheck.getDate() - 1); }
-        UI.gamification.streakBadge.innerHTML = `рџ”Ґ ${streak}`;
+        UI.gamification.streakBadge.innerHTML = `🔥 ${streak}`;
     };
 
     let chartInstance = null;
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const ctx = document.getElementById('analytics-chart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
-        chartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Р’РёРєРѕРЅР°РЅРѕ', data: Object.values(dataObj), backgroundColor: '#b388ff', borderRadius: 8 }] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: '#8b8b98' }, grid: { color: '#272730' } }, x: { ticks: { color: '#8b8b98' }, grid: { display: false } } }, plugins: { legend: { display: false } } } });
+        chartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Виконано', data: Object.values(dataObj), backgroundColor: '#b388ff', borderRadius: 8 }] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: '#8b8b98' }, grid: { color: '#272730' } }, x: { ticks: { color: '#8b8b98' }, grid: { display: false } } }, plugins: { legend: { display: false } } } });
     };
     if (UI.gamification.btnAnalytics) {
         UI.gamification.btnAnalytics.addEventListener('click', openAnalytics);
@@ -151,12 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ================= MODALS & FORMS =================
     const openSheet = (task = null, datePreset = null) => {
         if (task) {
-            document.getElementById('sheet-title').textContent = 'Р РµРґР°РіСѓРІР°С‚Рё Р·Р°РІРґР°РЅРЅСЏ';
+            document.getElementById('sheet-title').textContent = 'Редагувати завдання';
             UI.inputs.id.value = task.id; UI.inputs.title.value = task.title; UI.inputs.desc.value = task.description || '';
             UI.inputs.date.value = task.dueDate || ''; UI.inputs.category.value = task.categoryId || 'personal';
             UI.inputs.priority.value = task.priority || 'medium'; UI.inputs.recurrence.value = task.recurrence || 'none';
         } else {
-            document.getElementById('sheet-title').textContent = 'РќРѕРІРµ Р·Р°РІРґР°РЅРЅСЏ';
+            document.getElementById('sheet-title').textContent = 'Нове завдання';
             UI.form.reset(); UI.inputs.id.value = ''; UI.inputs.category.value = state.category !== 'all' ? state.category : 'personal';
             if (datePreset) { UI.inputs.date.value = datePreset + 'T12:00'; }
         }
@@ -252,12 +252,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render Completed Grouped By Date
         const compByDate = {};
         compTasks.sort((a, b) => (b.completionDate || 0) - (a.completionDate || 0)).forEach(t => {
-            let cdStr = 'Р Р°РЅС–С€Рµ';
+            let cdStr = 'Раніше';
             if (t.completionDate) {
                 const cdDateStr = new Date(t.completionDate).toLocaleDateString('en-CA');
                 const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-                if (cdDateStr === todayStr) cdStr = 'РЎСЊРѕРіРѕРґРЅС–';
-                else if (cdDateStr === yesterday.toLocaleDateString('en-CA')) cdStr = 'Р’С‡РѕСЂР°';
+                if (cdDateStr === todayStr) cdStr = 'Сьогодні';
+                else if (cdDateStr === yesterday.toLocaleDateString('en-CA')) cdStr = 'Вчора';
                 else cdStr = new Date(t.completionDate).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' });
             }
             if (!compByDate[cdStr]) compByDate[cdStr] = [];
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const createTaskLi = (task) => {
         const li = document.createElement('li'); li.className = `todo-item ${task.completed ? 'completed' : ''}`; li.setAttribute('data-id', task.id);
         const isOverdue = !task.completed && task.dueDate && new Date(task.dueDate) < new Date() ? 'overdue' : '';
-        const dh = task.dueDate ? `<div class="todo-meta ${isOverdue}">рџ—“ ${fDate(task.dueDate)}${task.recurrence && task.recurrence !== 'none' ? ' рџ”„' : ''}</div>` : '';
+        const dh = task.dueDate ? `<div class="todo-meta ${isOverdue}">📅 ${fDate(task.dueDate)}${task.recurrence && task.recurrence !== 'none' ? ' 🔄' : ''}</div>` : '';
 
         li.innerHTML = `
             <div class="checkbox"></div>
@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             dBtn.addEventListener('click', (e) => {
                 if (e.detail === 1) {
-                    UI.daily.title.textContent = `Р—Р°РІРґР°РЅРЅСЏ РЅР° ${new Date(y, m, i).toLocaleString('uk-UA', { day: 'numeric', month: 'short' })}`;
+                    UI.daily.title.textContent = `Завдання на ${new Date(y, m, i).toLocaleString('uk-UA', { day: 'numeric', month: 'short' })}`;
                     renderDailyTasks(dsTasks, ds);
                     UI.daily.sheet.classList.add('open'); UI.overlay.classList.add('open');
                 }
@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderDailyTasks = (dsTasks, ds) => {
         UI.daily.list.innerHTML = '';
-        if (dsTasks.length === 0) { UI.daily.list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:14px;padding: 10px;">РќРµРјР°С” Р·Р°РІРґР°РЅСЊ. РЎС‚РІРѕСЂС–С‚СЊ РЅРѕРІРµ.</p>'; return; }
+        if (dsTasks.length === 0) { UI.daily.list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:14px;padding: 10px;">Немає завдань. Створіть нове.</p>'; return; }
         dsTasks.forEach(t => {
             const li = document.createElement('li'); li.className = 'todo-item';
             li.innerHTML = `<div class="priority-dot prio-${t.priority}"></div> <span style="flex:1;font-size:15px;color:var(--text-primary);">${esc(t.title)}</span>`;
