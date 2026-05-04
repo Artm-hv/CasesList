@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetId = e.currentTarget.getAttribute('data-target');
         UI.navBtns.forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active');
         UI.views.forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
-        const view = document.getElementById(targetId); view.style.display = 'block'; view.classList.add('active');
+        const view = document.getElementById(targetId); view.style.display = 'flex'; view.classList.add('active');
         UI.fab.style.display = (targetId === 'view-settings' || targetId === 'view-habits') ? 'none' : 'flex';
         if (targetId === 'view-calendar') renderCalendar();
         if (targetId === 'view-habits') renderHabits();
