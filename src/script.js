@@ -45,6 +45,25 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const completeSound = new Audio('assets/ready_sound.mp3');
+    completeSound.preload = 'auto';
+
+    // iOS Audio Unlock Pattern
+    let audioUnlocked = false;
+    const unlockAudio = () => {
+        if (audioUnlocked) return;
+        completeSound.play().then(() => {
+            completeSound.pause();
+            completeSound.currentTime = 0;
+            audioUnlocked = true;
+            document.body.removeEventListener('touchstart', unlockAudio);
+            document.body.removeEventListener('click', unlockAudio);
+        }).catch(e => {
+            // Error means it wasn't allowed yet, keep listeners
+        });
+    };
+    document.body.addEventListener('touchstart', unlockAudio, { once: false });
+    document.body.addEventListener('click', unlockAudio, { once: false });
+
     const state = { search: '', category: 'all' };
     const fDate = (ds) => ds ? new Date(ds).toLocaleString('uk-UA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
     const esc = (str) => str ? str.replace(/[&<>'"]/g, t => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[t] || t)) : '';
