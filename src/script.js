@@ -209,7 +209,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ================= MAIN RENDERING =================
     const renderList = async () => {
         let tasks = await dbQuery('readonly', 'getAll');
-        tasks.sort((a, b) => (b.order || 0) - (a.order || 0));
+        const priorityWeight = { high: 3, medium: 2, low: 1 };
+        tasks.sort((a, b) => {
+            const pA = priorityWeight[a.priority] || 2;
+            const pB = priorityWeight[b.priority] || 2;
+            if (pA !== pB) return pB - pA;
+            return (b.order || 0) - (a.order || 0);
+        });
 
         const todayStr = new Date().toLocaleDateString('en-CA');
         let todayTotal = 0; let todayDone = 0;
@@ -289,10 +295,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${task.description ? `<p class="todo-desc">${esc(task.description)}</p>` : ''}
                 ${dh}
             </div>
-            <div class="task-actions" style="gap:12px;">
+            <div class="task-actions" style="gap:12px; align-items:center;">
                 ${!task.completed && task.dueDate ? `<button class="icon-btn bell-btn" style="color: var(--primary-color);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>` : ''}
                 <button class="icon-btn edit-btn" style="color: var(--primary-color);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
                 <button class="icon-btn delete-btn" style="color: var(--primary-color);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                <div class="drag-handle icon-btn" style="cursor: grab; color: var(--text-secondary); touch-action: none;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></div>
             </div>
         `;
 
@@ -321,7 +328,118 @@ document.addEventListener('DOMContentLoaded', () => {
             li.style.transform = 'scale(0.9)'; li.style.opacity = '0';
             setTimeout(async () => { await dbQuery('readwrite', 'delete', task.id); renderList(); renderCalendar(); }, 200);
         });
+        li.querySelector('.drag-handle').addEventListener('mousedown', (e) => startDrag(e, li));
+        li.querySelector('.drag-handle').addEventListener('touchstart', (e) => startDrag(e, li), { passive: false });
+
         return li;
+    };
+
+    // ================= DRAG AND DROP =================
+    let draggingEl = null;
+    let placeholder = null;
+    let startY = 0;
+    let startTop = 0;
+
+    const startDrag = (e, li) => {
+        if (li.classList.contains('completed')) return;
+        if (e.type === 'touchstart') e.preventDefault(); // prevent scrolling
+        
+        draggingEl = li;
+        const rect = li.getBoundingClientRect();
+        startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+        startTop = rect.top;
+
+        placeholder = document.createElement('li');
+        placeholder.className = 'todo-item placeholder';
+        placeholder.style.height = `${rect.height}px`;
+        placeholder.style.opacity = '0';
+        placeholder.style.margin = '0';
+        
+        li.parentNode.insertBefore(placeholder, li);
+        
+        li.classList.add('is-dragging');
+        li.style.position = 'fixed';
+        li.style.width = `${rect.width}px`;
+        li.style.top = `${rect.top}px`;
+        li.style.left = `${rect.left}px`;
+        li.style.zIndex = '1000';
+        li.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
+        li.style.transition = 'none';
+
+        document.addEventListener('mousemove', onDragMove, { passive: false });
+        document.addEventListener('touchmove', onDragMove, { passive: false });
+        document.addEventListener('mouseup', onDragEnd);
+        document.addEventListener('touchend', onDragEnd);
+    };
+
+    const onDragMove = (e) => {
+        if (!draggingEl) return;
+        e.preventDefault();
+        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+        const deltaY = clientY - startY;
+        draggingEl.style.top = `${startTop + deltaY}px`;
+
+        draggingEl.style.visibility = 'hidden';
+        const elUnder = document.elementFromPoint(e.type === 'touchmove' ? e.touches[0].clientX : e.clientX, clientY);
+        draggingEl.style.visibility = 'visible';
+
+        if (!elUnder) return;
+        const targetLi = elUnder.closest('li.todo-item:not(.is-dragging):not(.completed)');
+        if (targetLi && targetLi !== placeholder) {
+            const rect = targetLi.getBoundingClientRect();
+            const mid = rect.top + rect.height / 2;
+            if (clientY < mid) {
+                targetLi.parentNode.insertBefore(placeholder, targetLi);
+            } else {
+                targetLi.parentNode.insertBefore(placeholder, targetLi.nextSibling);
+            }
+        }
+    };
+
+    const onDragEnd = async () => {
+        if (!draggingEl) return;
+        
+        document.removeEventListener('mousemove', onDragMove);
+        document.removeEventListener('touchmove', onDragMove);
+        document.removeEventListener('mouseup', onDragEnd);
+        document.removeEventListener('touchend', onDragEnd);
+
+        placeholder.parentNode.insertBefore(draggingEl, placeholder);
+        placeholder.remove();
+
+        draggingEl.classList.remove('is-dragging');
+        draggingEl.style = '';
+
+        const listItems = Array.from(UI.list.active.querySelectorAll('li.todo-item'));
+        const index = listItems.indexOf(draggingEl);
+        const taskId = draggingEl.getAttribute('data-id');
+        
+        let newOrder = Date.now();
+        const tasks = await dbQuery('readonly', 'getAll');
+        const taskObj = tasks.find(t => t.id === taskId);
+        
+        if (taskObj) {
+            const prevLi = listItems[index - 1];
+            const nextLi = listItems[index + 1];
+            
+            const prevTask = prevLi ? tasks.find(t => t.id === prevLi.getAttribute('data-id')) : null;
+            const nextTask = nextLi ? tasks.find(t => t.id === nextLi.getAttribute('data-id')) : null;
+
+            if (prevTask && nextTask) {
+                newOrder = ((prevTask.order || 0) + (nextTask.order || 0)) / 2;
+            } else if (prevTask) {
+                newOrder = (prevTask.order || 0) - 1000;
+            } else if (nextTask) {
+                newOrder = (nextTask.order || 0) + 1000;
+            }
+
+            taskObj.order = newOrder;
+            await dbQuery('readwrite', 'put', taskObj);
+            renderList();
+        }
+
+        draggingEl = null;
+        placeholder = null;
     };
 
     // ================= CALENDAR & BACKLOG RENDERING =================
