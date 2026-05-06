@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         cal: {
             prev: document.getElementById('cal-prev'), next: document.getElementById('cal-next'), title: document.getElementById('cal-month-title'),
-            grid: document.getElementById('calendar-grid'), viewBtns: document.querySelectorAll('.cal-view-btn')
+            grid: document.getElementById('calendar-grid'), viewBtns: document.querySelectorAll('.cal-view-btn'),
+            agenda: document.getElementById('calendar-agenda'), container: document.getElementById('view-calendar')
         },
 
         daily: { sheet: document.getElementById('daily-tasks-sheet'), list: document.getElementById('daily-tasks-list'), title: document.getElementById('daily-sheet-title'), close: document.getElementById('close-daily-sheet') },
@@ -522,12 +523,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ================= CALENDAR & BACKLOG RENDERING =================
     let calDate = new Date();
+    let calView = 'month';
     const fDateStr = (y, m, d) => `${y}-${(m + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
 
     const renderCalendar = async () => {
+        UI.cal.container.classList.remove('cal-view-month', 'cal-view-week', 'cal-view-day');
+        UI.cal.container.classList.add(`cal-view-${calView}`);
+        
+        if (calView === 'month') await renderMonthView();
+        else if (calView === 'week') await renderWeekView();
+        else if (calView === 'day') await renderDayView();
+    };
+
+    const renderMonthView = async () => {
         const y = calDate.getFullYear(); const m = calDate.getMonth();
         UI.cal.title.textContent = new Date(y, m).toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
         UI.cal.grid.innerHTML = '';
+        UI.cal.agenda.innerHTML = '';
 
         const firstDay = new Date(y, m, 1).getDay();
         const emptyCells = firstDay === 0 ? 6 : firstDay - 1;
@@ -565,24 +577,140 @@ document.addEventListener('DOMContentLoaded', () => {
                 dotsArea.appendChild(dot);
             }
 
-            let pressTimer;
-            dBtn.addEventListener('touchstart', (e) => { pressTimer = setTimeout(() => { openSheet(null, ds); navigator.vibrate?.(50); }, 600); }, { passive: true });
-            dBtn.addEventListener('touchmove', () => clearTimeout(pressTimer));
-            dBtn.addEventListener('touchend', () => clearTimeout(pressTimer));
-            dBtn.addEventListener('mousedown', (e) => { pressTimer = setTimeout(() => openSheet(null, ds), 600); });
-            dBtn.addEventListener('mouseup', () => clearTimeout(pressTimer));
-            dBtn.addEventListener('mouseleave', () => clearTimeout(pressTimer));
-
-            dBtn.addEventListener('click', (e) => {
-                if (e.detail === 1) {
-                    UI.daily.title.textContent = `Завдання на ${new Date(y, m, i).toLocaleString('uk-UA', { day: 'numeric', month: 'short' })}`;
-                    renderDailyTasks(dsTasks, ds);
-                    UI.daily.sheet.classList.add('open'); UI.overlay.classList.add('open');
-                }
-            });
-
+            attachDayEvents(dBtn, ds, dsTasks, y, m, i);
             UI.cal.grid.appendChild(dBtn);
         }
+    };
+
+    const renderWeekView = async () => {
+        UI.cal.grid.innerHTML = '';
+        UI.cal.agenda.innerHTML = '';
+        
+        // Find Monday of the current week
+        const startOfWeek = new Date(calDate);
+        const day = startOfWeek.getDay();
+        const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+        startOfWeek.setDate(diff);
+        
+        UI.cal.title.textContent = `${startOfWeek.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} - ${new Date(startOfWeek.getTime() + 6 * 86400000).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+        const allTasks = await dbQuery('readonly', 'getAll');
+        const todayStr = fDateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+        const weekTasks = [];
+
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(startOfWeek);
+            d.setDate(startOfWeek.getDate() + i);
+            const ds = fDateStr(d.getFullYear(), d.getMonth(), d.getDate());
+            
+            const dBtn = document.createElement('div');
+            dBtn.className = 'calendar-day'; dBtn.setAttribute('data-date', ds);
+            if (ds === todayStr) dBtn.classList.add('today');
+            if (ds === fDateStr(calDate.getFullYear(), calDate.getMonth(), calDate.getDate())) dBtn.classList.add('selected');
+            
+            dBtn.innerHTML = `<span>${d.getDate()}</span><div class="cal-dots-area"></div>`;
+            
+            const dsTasks = allTasks.filter(t => t.dueDate && t.dueDate.startsWith(ds) && !t.completed);
+            weekTasks.push({ date: d, tasks: dsTasks });
+            
+            const dotsArea = dBtn.querySelector('.cal-dots-area');
+            dsTasks.slice(0, 4).forEach(t => {
+                const dot = document.createElement('div');
+                dot.className = `cal-dot prio-${t.priority || 'medium'}`;
+                dotsArea.appendChild(dot);
+            });
+
+            dBtn.addEventListener('click', () => {
+                calDate = new Date(d);
+                renderCalendar();
+            });
+            UI.cal.grid.appendChild(dBtn);
+        }
+
+        renderAgenda(weekTasks);
+    };
+
+    const renderDayView = async () => {
+        UI.cal.grid.innerHTML = '';
+        UI.cal.agenda.innerHTML = '';
+        
+        const ds = fDateStr(calDate.getFullYear(), calDate.getMonth(), calDate.getDate());
+        UI.cal.title.textContent = calDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        const allTasks = await dbQuery('readonly', 'getAll');
+        const dsTasks = allTasks.filter(t => t.dueDate && t.dueDate.startsWith(ds) && !t.completed);
+
+        // Still show the week strip for navigation
+        const startOfWeek = new Date(calDate);
+        const day = startOfWeek.getDay();
+        const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+        startOfWeek.setDate(diff);
+
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(startOfWeek);
+            d.setDate(startOfWeek.getDate() + i);
+            const dds = fDateStr(d.getFullYear(), d.getMonth(), d.getDate());
+            
+            const dBtn = document.createElement('div');
+            dBtn.className = 'calendar-day';
+            if (dds === ds) dBtn.classList.add('selected');
+            if (dds === fDateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())) dBtn.classList.add('today');
+            
+            dBtn.innerHTML = `<span>${d.getDate()}</span>`;
+            dBtn.addEventListener('click', () => {
+                calDate = new Date(d);
+                renderCalendar();
+            });
+            UI.cal.grid.appendChild(dBtn);
+        }
+
+        renderAgenda([{ date: calDate, tasks: dsTasks }]);
+    };
+
+    const renderAgenda = (dayGroups) => {
+        if (dayGroups.every(g => g.tasks.length === 0)) {
+            UI.cal.agenda.innerHTML = '<div class="agenda-empty">На цей період завдань немає</div>';
+            return;
+        }
+
+        dayGroups.forEach(group => {
+            if (group.tasks.length === 0) return;
+            
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'agenda-day-group';
+            
+            const header = document.createElement('div');
+            header.className = 'agenda-day-header';
+            const dateLabel = group.date.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', weekday: 'long' });
+            header.textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
+            
+            groupDiv.appendChild(header);
+            
+            group.tasks.forEach(task => {
+                const li = createTaskLi(task);
+                groupDiv.appendChild(li);
+            });
+            
+            UI.cal.agenda.appendChild(groupDiv);
+        });
+    };
+
+    const attachDayEvents = (dBtn, ds, dsTasks, y, m, i) => {
+        let pressTimer;
+        dBtn.addEventListener('touchstart', (e) => { pressTimer = setTimeout(() => { openSheet(null, ds); navigator.vibrate?.(50); }, 600); }, { passive: true });
+        dBtn.addEventListener('touchmove', () => clearTimeout(pressTimer));
+        dBtn.addEventListener('touchend', () => clearTimeout(pressTimer));
+        dBtn.addEventListener('mousedown', (e) => { pressTimer = setTimeout(() => openSheet(null, ds), 600); });
+        dBtn.addEventListener('mouseup', () => clearTimeout(pressTimer));
+        dBtn.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+
+        dBtn.addEventListener('click', (e) => {
+            if (e.detail === 1) {
+                UI.daily.title.textContent = `Завдання на ${new Date(y, m, i).toLocaleString('uk-UA', { day: 'numeric', month: 'short' })}`;
+                renderDailyTasks(dsTasks, ds);
+                UI.daily.sheet.classList.add('open'); UI.overlay.classList.add('open');
+            }
+        });
     };
 
     const renderDailyTasks = (dsTasks, ds) => {
@@ -595,8 +723,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    UI.cal.prev.addEventListener('click', () => { calDate.setMonth(calDate.getMonth() - 1); renderCalendar(); });
-    UI.cal.next.addEventListener('click', () => { calDate.setMonth(calDate.getMonth() + 1); renderCalendar(); });
+    UI.cal.prev.addEventListener('click', () => {
+        if (calView === 'month') calDate.setMonth(calDate.getMonth() - 1);
+        else if (calView === 'week') calDate.setDate(calDate.getDate() - 7);
+        else calDate.setDate(calDate.getDate() - 1);
+        renderCalendar();
+    });
+    UI.cal.next.addEventListener('click', () => {
+        if (calView === 'month') calDate.setMonth(calDate.getMonth() + 1);
+        else if (calView === 'week') calDate.setDate(calDate.getDate() + 7);
+        else calDate.setDate(calDate.getDate() + 1);
+        renderCalendar();
+    });
+
+    UI.cal.viewBtns.forEach(btn => btn.addEventListener('click', (e) => {
+        UI.cal.viewBtns.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        calView = e.target.getAttribute('data-view');
+        renderCalendar();
+    }));
 
 
     UI.daily.close.addEventListener('click', () => { UI.daily.sheet.classList.remove('open'); UI.overlay.classList.remove('open'); renderCalendar(); });
