@@ -292,6 +292,12 @@ header p {
    transform: scale(0.97);
 }
 
+.todo-item.deleting {
+   transform: scale(0.9) !important;
+   opacity: 0 !important;
+   transition: 0.3s ease-out;
+}
+
 .checkbox {
    width: 24px;
    height: 24px;
@@ -768,6 +774,87 @@ header p {
    justify-content: space-between;
    align-items: center;
    margin-bottom: 24px;
+}
+
+/* Central Modal Styling (for Analytics) */
+.bottom-sheet.central-modal {
+   bottom: 50%;
+   left: 50%;
+   right: auto;
+   transform: translate(-50%, 150%);
+   width: 90%;
+   max-width: 400px;
+   border-radius: 28px;
+   padding: 32px 24px;
+}
+
+.bottom-sheet.central-modal.open {
+   transform: translate(-50%, 50%);
+}
+
+/* Custom Confirm Dialog */
+.custom-confirm {
+   position: fixed;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%) scale(0.9);
+   background: var(--surface-color);
+   border-radius: 24px;
+   padding: 24px;
+   width: 85%;
+   max-width: 320px;
+   z-index: 200;
+   box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+   border: 1px solid var(--border-color);
+   opacity: 0;
+   pointer-events: none;
+   transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.custom-confirm.open {
+   opacity: 1;
+   pointer-events: auto;
+   transform: translate(-50%, -50%) scale(1);
+}
+
+.confirm-title {
+   font-size: 18px;
+   font-weight: 700;
+   margin-bottom: 12px;
+   text-align: center;
+}
+
+.confirm-text {
+   font-size: 14px;
+   color: var(--text-secondary);
+   margin-bottom: 24px;
+   text-align: center;
+   line-height: 1.5;
+}
+
+.confirm-actions {
+   display: flex;
+   gap: 12px;
+}
+
+.confirm-btn {
+   flex: 1;
+   padding: 12px;
+   border-radius: 12px;
+   font-weight: 600;
+   cursor: pointer;
+   border: none;
+   transition: 0.2s;
+}
+
+.confirm-yes {
+   background: var(--danger-color);
+   color: white;
+}
+
+.confirm-no {
+   background: var(--surface-light);
+   color: var(--text-primary);
 }
 
 .sheet-header h2 {

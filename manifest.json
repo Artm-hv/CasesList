@@ -4,8 +4,8 @@
   "description": "Мобільний список завдань",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#121212",
-  "theme_color": "#121212",
+  "background_color": "#060608",
+  "theme_color": "#060608",
   "icons": [
     {
       "src": "assets/icon-192.png",

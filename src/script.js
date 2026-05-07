@@ -1,28 +1,61 @@
+/**
+ * Main Application logic
+ */
 document.addEventListener('DOMContentLoaded', () => {
-    // UI Refs
+    // UI References
     const UI = {
-        views: document.querySelectorAll('.tab-view'), navBtns: document.querySelectorAll('.nav-btn'),
-        list: { active: document.getElementById('active-tasks'), completed: document.getElementById('completed-tasks'), count: document.getElementById('completed-count') },
-        fab: document.getElementById('fab-add'), sheet: document.getElementById('bottom-sheet'), overlay: document.getElementById('overlay'),
-        form: document.getElementById('task-form'), search: document.getElementById('search-input'),
-        progress: { text: document.getElementById('daily-progress-text'), bar: document.getElementById('daily-progress-bar') },
-        history: { sheet: document.getElementById('history-sheet'), close: document.getElementById('close-history-sheet'), btn: document.getElementById('btn-open-history'), count: document.getElementById('settings-completed-count') },
+        views: document.querySelectorAll('.tab-view'),
+        navBtns: document.querySelectorAll('.nav-btn'),
+        list: {
+            active: document.getElementById('active-tasks'),
+            completed: document.getElementById('completed-tasks')
+        },
+        fab: document.getElementById('fab-add'),
+        sheet: document.getElementById('bottom-sheet'),
+        overlay: document.getElementById('overlay'),
+        form: document.getElementById('task-form'),
+        search: document.getElementById('search-input'),
+        progress: {
+            text: document.getElementById('daily-progress-text'),
+            bar: document.getElementById('daily-progress-bar')
+        },
+        history: {
+            sheet: document.getElementById('history-sheet'),
+            close: document.getElementById('close-history-sheet'),
+            btn: document.getElementById('btn-open-history'),
+            count: document.getElementById('settings-completed-count')
+        },
         categoryTabs: document.querySelectorAll('.tab'),
         inputs: {
-            id: document.getElementById('task-id'), title: document.getElementById('task-title'),
-            category: document.getElementById('task-category'), priority: document.getElementById('task-priority'),
-            date: document.getElementById('task-date'), recurrence: document.getElementById('task-recurrence'),
+            id: document.getElementById('task-id'),
+            title: document.getElementById('task-title'),
+            category: document.getElementById('task-category'),
+            priority: document.getElementById('task-priority'),
+            date: document.getElementById('task-date'),
+            recurrence: document.getElementById('task-recurrence'),
             desc: document.getElementById('task-desc')
         },
         cal: {
-            prev: document.getElementById('cal-prev'), next: document.getElementById('cal-next'), title: document.getElementById('cal-month-title'),
-            grid: document.getElementById('calendar-grid'), viewBtns: document.querySelectorAll('.cal-view-btn'),
-            agenda: document.getElementById('calendar-agenda'), container: document.getElementById('view-calendar')
+            prev: document.getElementById('cal-prev'),
+            next: document.getElementById('cal-next'),
+            title: document.getElementById('cal-month-title'),
+            grid: document.getElementById('calendar-grid'),
+            viewBtns: document.querySelectorAll('.cal-view-btn'),
+            agenda: document.getElementById('calendar-agenda'),
+            container: document.getElementById('view-calendar')
         },
-
-        daily: { sheet: document.getElementById('daily-tasks-sheet'), list: document.getElementById('daily-tasks-list'), title: document.getElementById('daily-sheet-title'), close: document.getElementById('close-daily-sheet') },
-        gamification: { streakBadge: document.getElementById('streak-badge'), btnAnalytics: document.getElementById('btn-analytics'), modalAnalytics: document.getElementById('analytics-modal'), closeAnalytics: document.getElementById('close-analytics') },
-        micBtn: document.getElementById('mic-btn'),
+        daily: {
+            sheet: document.getElementById('daily-tasks-sheet'),
+            list: document.getElementById('daily-tasks-list'),
+            title: document.getElementById('daily-sheet-title'),
+            close: document.getElementById('close-daily-sheet')
+        },
+        gamification: {
+            streakBadge: document.getElementById('streak-badge'),
+            btnAnalytics: document.getElementById('btn-analytics'),
+            modalAnalytics: document.getElementById('analytics-modal'),
+            closeAnalytics: document.getElementById('close-analytics')
+        },
         habits: {
             table: document.getElementById('habits-table'),
             weeklyDonuts: document.getElementById('habits-weekly-donuts'),
@@ -42,108 +75,96 @@ document.addEventListener('DOMContentLoaded', () => {
             inputTitle: document.getElementById('habit-title'),
             inputEmoji: document.getElementById('habit-emoji'),
             deleteBtn: document.getElementById('habit-delete-btn')
+        },
+        confirm: {
+            modal: document.getElementById('custom-confirm'),
+            title: document.getElementById('confirm-title'),
+            text: document.getElementById('confirm-text'),
+            no: document.getElementById('confirm-no'),
+            yes: document.getElementById('confirm-yes')
         }
     };
 
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const audioCtx = AudioContext ? new AudioContext() : null;
-    let soundBuffer = null;
-
-    if (audioCtx) {
-        try {
-            const b64Data = SOUND_B64.split(',')[1];
-            const binary = window.atob(b64Data);
-            const len = binary.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+    // Audio System
+    const AudioSystem = {
+        ctx: null,
+        buffer: null,
+        init: function() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            this.ctx = new AudioContext();
             
-            audioCtx.decodeAudioData(bytes.buffer, (buffer) => {
-                soundBuffer = buffer;
-            }, (e) => console.log('Decode error', e));
+            if (typeof SOUND_B64 !== 'undefined') {
+                try {
+                    const b64Data = SOUND_B64.split(',')[1];
+                    const binary = window.atob(b64Data);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                    
+                    this.ctx.decodeAudioData(bytes.buffer, (buffer) => {
+                        this.buffer = buffer;
+                    }, (e) => console.log('Audio decode error', e));
 
-            const unlockAudio = () => {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const b = audioCtx.createBuffer(1, 1, 22050);
-                const s = audioCtx.createBufferSource();
-                s.buffer = b;
-                s.connect(audioCtx.destination);
-                if (s.start) s.start(0); else s.noteOn(0);
-                document.body.removeEventListener('click', unlockAudio);
-                document.body.removeEventListener('touchend', unlockAudio);
-            };
-            document.body.addEventListener('click', unlockAudio, { once: false });
-            document.body.addEventListener('touchend', unlockAudio, { once: false });
-        } catch(e) { console.log('Audio init error', e); }
-    }
-
-    const playCompleteSound = () => {
-        if (!audioCtx || !soundBuffer) return;
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const source = audioCtx.createBufferSource();
-        source.buffer = soundBuffer;
-        source.connect(audioCtx.destination);
-        if (source.start) source.start(0); else source.noteOn(0);
+                    const unlock = () => {
+                        if (this.ctx.state === 'suspended') this.ctx.resume();
+                        document.body.removeEventListener('click', unlock);
+                        document.body.removeEventListener('touchend', unlock);
+                    };
+                    document.body.addEventListener('click', unlock);
+                    document.body.addEventListener('touchend', unlock);
+                } catch(e) { console.log('Audio init error', e); }
+            }
+        },
+        play: function() {
+            if (!this.ctx || !this.buffer) return;
+            if (this.ctx.state === 'suspended') this.ctx.resume();
+            const source = this.ctx.createBufferSource();
+            source.buffer = this.buffer;
+            source.connect(this.ctx.destination);
+            source.start(0);
+        }
     };
 
-    const state = { search: '', category: 'all' };
-    const fDate = (ds) => ds ? new Date(ds).toLocaleString('uk-UA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-    const esc = (str) => str ? str.replace(/[&<>'"]/g, t => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[t] || t)) : '';
+    AudioSystem.init();
 
-    const generateGCalLink = (task) => {
-        const fmtDate = (d) => d.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z';
-        const start = new Date(task.dueDate);
-        const end = new Date(start.getTime() + 30 * 60000);
-        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&dates=${fmtDate(start)}/${fmtDate(end)}&details=${encodeURIComponent(task.description || '')}`;
-        window.open(url, '_blank');
+    // Application State
+    const state = {
+        search: '',
+        category: CONFIG.CATEGORIES.ALL,
+        activeView: CONFIG.VIEWS.LIST,
+        calDate: new Date(),
+        calView: 'month',
+        habitsDate: new Date(),
+        draggingEl: null,
+        placeholder: null,
+        dragStartY: 0,
+        dragStartTop: 0,
+        autoScrollInterval: null,
+        lastClientX: 0,
+        lastClientY: 0
     };
 
-    // INIT DATE
-    const d = new Date().toLocaleDateString('uk-UA', { weekday: 'long', month: 'long', day: 'numeric' });
-    const df = document.getElementById('date-display');
-    if (df) df.textContent = d.charAt(0).toUpperCase() + d.slice(1);
+    // ================= HELPER FUNCTIONS =================
 
-    // ================= DB SETUP =================
-    let db;
-    const initDB = () => new Promise((resolve, reject) => {
-        const req = indexedDB.open('todo_app', 5);
-        req.onupgradeneeded = (e) => {
-            const tempDb = e.target.result;
-            const store = !tempDb.objectStoreNames.contains('tasks') ? tempDb.createObjectStore('tasks', { keyPath: 'id' }) : e.target.transaction.objectStore('tasks');
-            if (!store.indexNames.contains('dueDate')) store.createIndex('dueDate', 'dueDate', { unique: false });
-            if (!tempDb.objectStoreNames.contains('habits')) tempDb.createObjectStore('habits', { keyPath: 'id' });
+    const showConfirm = (title, text, onConfirm) => {
+        UI.confirm.title.textContent = title;
+        UI.confirm.text.textContent = text;
+        UI.confirm.modal.classList.add('open');
+        UI.overlay.classList.add('open');
+
+        const cleanup = () => {
+            UI.confirm.modal.classList.remove('open');
+            UI.overlay.classList.remove('open');
+            UI.confirm.yes.onclick = null;
+            UI.confirm.no.onclick = null;
         };
-        req.onsuccess = (e) => resolve(db = e.target.result);
-        req.onerror = (e) => reject(e.target.error);
-    });
 
-    const dbQuery = (mode, method, data = null) => new Promise((resolve) => {
-        const t = db.transaction(['tasks'], mode);
-        const req = data ? t.objectStore('tasks')[method](data) : t.objectStore('tasks')[method]();
-        req.onsuccess = () => resolve(req.result);
-        if (mode === 'readwrite') t.oncomplete = () => resolve();
-    });
+        UI.confirm.yes.onclick = () => { onConfirm(); cleanup(); };
+        UI.confirm.no.onclick = () => { cleanup(); };
+    };
 
-    const dbHabits = (mode, method, data = null) => new Promise((resolve) => {
-        const t = db.transaction(['habits'], mode);
-        const req = data ? t.objectStore('habits')[method](data) : t.objectStore('habits')[method]();
-        req.onsuccess = () => resolve(req.result);
-        if (mode === 'readwrite') t.oncomplete = () => resolve();
-    });
-
-    // ================= BOTTOM NAV =================
-    UI.navBtns.forEach(btn => btn.addEventListener('click', (e) => {
-        const targetId = e.currentTarget.getAttribute('data-target');
-        UI.navBtns.forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active');
-        UI.views.forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
-        const view = document.getElementById(targetId); view.style.display = 'flex'; view.classList.add('active');
-        UI.fab.style.display = (targetId === 'view-settings' || targetId === 'view-habits') ? 'none' : 'flex';
-        if (targetId === 'view-calendar') renderCalendar();
-        if (targetId === 'view-habits') renderHabits();
-    }));
-
-    // ================= GAMIFICATION & POMODORO (Restored Phase 4) =================
     const updateStreaks = async () => {
-        const tasks = await dbQuery('readonly', 'getAll');
+        const tasks = await DB.query('readonly', 'getAll');
         const completedTasks = tasks.filter(t => t.completed && t.completionDate);
         if (completedTasks.length === 0) { UI.gamification.streakBadge.innerHTML = '🔥 0'; return; }
 
@@ -162,94 +183,173 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let chartInstance = null;
     const openAnalytics = async () => {
-        UI.gamification.modalAnalytics.classList.add('open'); UI.overlay.classList.add('open');
-        const tasks = await dbQuery('readonly', 'getAll');
+        UI.gamification.modalAnalytics.classList.add('open'); 
+        UI.overlay.classList.add('open');
+        
+        const tasks = await DB.query('readonly', 'getAll');
         const dataObj = {}; const labels = [];
         const today = new Date(); today.setHours(0, 0, 0, 0);
-        for (let i = 6; i >= 0; i--) { const d = new Date(today); d.setDate(d.getDate() - i); labels.push(d.toLocaleDateString('uk-UA', { weekday: 'short' })); dataObj[d.toLocaleDateString('en-CA')] = 0; }
-        tasks.forEach(t => { if (t.completed && t.completionDate) { const tDate = new Date(t.completionDate).toLocaleDateString('en-CA'); if (dataObj[tDate] !== undefined) dataObj[tDate]++; } });
+        
+        for (let i = 6; i >= 0; i--) { 
+            const d = new Date(today); 
+            d.setDate(d.getDate() - i); 
+            labels.push(d.toLocaleDateString('uk-UA', { weekday: 'short' })); 
+            dataObj[d.toLocaleDateString('en-CA')] = 0; 
+        }
+        
+        tasks.forEach(t => { 
+            if (t.completed && t.completionDate) { 
+                const tDate = new Date(t.completionDate).toLocaleDateString('en-CA'); 
+                if (dataObj[tDate] !== undefined) dataObj[tDate]++; 
+            } 
+        });
 
         const ctx = document.getElementById('analytics-chart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
-        chartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Виконано', data: Object.values(dataObj), backgroundColor: '#b388ff', borderRadius: 8 }] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: '#8b8b98' }, grid: { color: '#272730' } }, x: { ticks: { color: '#8b8b98' }, grid: { display: false } } }, plugins: { legend: { display: false } } } });
+        
+        if (typeof Chart !== 'undefined') {
+            chartInstance = new Chart(ctx, { 
+                type: 'bar', 
+                data: { 
+                    labels: labels, 
+                    datasets: [{ 
+                        label: 'Виконано', 
+                        data: Object.values(dataObj), 
+                        backgroundColor: CONFIG.COLORS.PRIMARY, 
+                        borderRadius: 8 
+                    }] 
+                }, 
+                options: { 
+                    responsive: true, 
+                    scales: { 
+                        y: { beginAtZero: true, ticks: { stepSize: 1, color: '#8b8b98' }, grid: { color: '#272730' } }, 
+                        x: { ticks: { color: '#8b8b98' }, grid: { display: false } } 
+                    }, 
+                    plugins: { legend: { display: false } } 
+                } 
+            });
+        }
     };
-    if (UI.gamification.btnAnalytics) {
-        UI.gamification.btnAnalytics.addEventListener('click', openAnalytics);
-        UI.gamification.closeAnalytics.addEventListener('click', () => { UI.gamification.modalAnalytics.classList.remove('open'); UI.overlay.classList.remove('open'); });
-    }
 
+    // ================= EVENT LISTENERS =================
 
-
-
-    // ================= STATE AND EVENT LISTENERS =================
-    if (UI.search) UI.search.addEventListener('input', (e) => { state.search = e.target.value.toLowerCase().trim(); renderList(); });
-
-    UI.categoryTabs.forEach(tab => tab.addEventListener('click', (e) => {
-        UI.categoryTabs.forEach(t => t.classList.remove('active')); e.target.classList.add('active');
-        state.category = e.target.getAttribute('data-cat'); renderList();
+    UI.navBtns.forEach(btn => btn.addEventListener('click', (e) => {
+        const targetId = e.currentTarget.getAttribute('data-target');
+        UI.navBtns.forEach(b => b.classList.remove('active')); 
+        e.currentTarget.classList.add('active');
+        
+        UI.views.forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
+        const view = document.getElementById(targetId); 
+        view.style.display = 'flex'; 
+        view.classList.add('active');
+        
+        state.activeView = targetId;
+        UI.fab.style.display = (targetId === CONFIG.VIEWS.SETTINGS || targetId === CONFIG.VIEWS.HABITS) ? 'none' : 'flex';
+        
+        if (targetId === CONFIG.VIEWS.CALENDAR) renderCalendar();
+        if (targetId === CONFIG.VIEWS.HABITS) renderHabits();
+        if (targetId === CONFIG.VIEWS.LIST) renderList();
     }));
 
-    // ================= MODALS & FORMS =================
+    if (UI.search) UI.search.addEventListener('input', (e) => { 
+        state.search = e.target.value.toLowerCase().trim(); 
+        renderList(); 
+    });
+
+    UI.categoryTabs.forEach(tab => tab.addEventListener('click', (e) => {
+        UI.categoryTabs.forEach(t => t.classList.remove('active')); 
+        e.target.classList.add('active');
+        state.category = e.target.getAttribute('data-cat'); 
+        renderList();
+    }));
+
+    // Form Handling
     const openSheet = (task = null, datePreset = null) => {
         if (task) {
             document.getElementById('sheet-title').textContent = 'Редагувати завдання';
-            UI.inputs.id.value = task.id; UI.inputs.title.value = task.title; UI.inputs.desc.value = task.description || '';
-            UI.inputs.date.value = task.dueDate || ''; UI.inputs.category.value = task.categoryId || 'personal';
-            UI.inputs.priority.value = task.priority || 'medium'; UI.inputs.recurrence.value = task.recurrence || 'none';
+            UI.inputs.id.value = task.id; UI.inputs.title.value = task.title; 
+            UI.inputs.desc.value = task.description || '';
+            UI.inputs.date.value = task.dueDate || ''; 
+            UI.inputs.category.value = task.categoryId || CONFIG.CATEGORIES.PERSONAL;
+            UI.inputs.priority.value = task.priority || CONFIG.PRIORITIES.MEDIUM; 
+            UI.inputs.recurrence.value = task.recurrence || CONFIG.RECURRENCE.NONE;
         } else {
             document.getElementById('sheet-title').textContent = 'Нове завдання';
-            UI.form.reset(); UI.inputs.id.value = ''; UI.inputs.category.value = state.category !== 'all' ? state.category : 'personal';
+            UI.form.reset(); UI.inputs.id.value = ''; 
+            UI.inputs.category.value = state.category !== CONFIG.CATEGORIES.ALL ? state.category : CONFIG.CATEGORIES.PERSONAL;
             if (datePreset) { UI.inputs.date.value = datePreset + 'T12:00'; }
         }
-        UI.sheet.classList.add('open'); UI.overlay.classList.add('open');
+        UI.sheet.classList.add('open'); 
+        UI.overlay.classList.add('open');
         UI.daily.sheet.classList.remove('open');
     };
 
     UI.fab.addEventListener('click', () => openSheet());
-    const closeSheet = () => { UI.sheet.classList.remove('open'); UI.overlay.classList.remove('open'); };
-    document.getElementById('close-sheet').addEventListener('click', closeSheet);
-
-    UI.overlay.addEventListener('click', () => {
-        UI.sheet.classList.remove('open'); UI.gamification.modalAnalytics?.classList.remove('open');
+    
+    const closeAllModals = () => {
+        UI.sheet.classList.remove('open');
+        UI.gamification.modalAnalytics?.classList.remove('open');
         UI.daily.sheet.classList.remove('open');
-        if (UI.history.sheet) UI.history.sheet.classList.remove('open');
-        if (UI.habits.sheet) UI.habits.sheet.classList.remove('open');
+        UI.history.sheet?.classList.remove('open');
+        UI.habits.sheet?.classList.remove('open');
+        UI.confirm.modal.classList.remove('open');
         UI.overlay.classList.remove('open');
-    });
+    };
+
+    document.getElementById('close-sheet').addEventListener('click', closeAllModals);
+    UI.overlay.addEventListener('click', closeAllModals);
 
     if (UI.history.btn) {
         UI.history.btn.addEventListener('click', () => {
             UI.history.sheet.classList.add('open');
             UI.overlay.classList.add('open');
         });
-        UI.history.close.addEventListener('click', () => {
-            UI.history.sheet.classList.remove('open');
-            UI.overlay.classList.remove('open');
-        });
+        UI.history.close.addEventListener('click', closeAllModals);
+    }
+
+    if (UI.gamification.btnAnalytics) {
+        UI.gamification.btnAnalytics.addEventListener('click', openAnalytics);
+        UI.gamification.closeAnalytics.addEventListener('click', closeAllModals);
     }
 
     UI.form.addEventListener('submit', async (e) => {
-        e.preventDefault(); const t = UI.inputs.title.value.trim(); if (!t) return;
-        let existingTask = null; if (UI.inputs.id.value) existingTask = (await dbQuery('readonly', 'getAll')).find(o => o.id === UI.inputs.id.value);
+        e.preventDefault(); 
+        const t = UI.inputs.title.value.trim(); 
+        if (!t) return;
+        
+        let existingTask = null; 
+        if (UI.inputs.id.value) {
+            existingTask = await DB.query('readonly', 'get', UI.inputs.id.value);
+        }
 
         const task = {
             id: UI.inputs.id.value || Date.now().toString(),
-            title: t, description: UI.inputs.desc.value.trim(), dueDate: UI.inputs.date.value,
+            title: t, 
+            description: UI.inputs.desc.value.trim(), 
+            dueDate: UI.inputs.date.value,
             completed: existingTask ? existingTask.completed : false,
-            categoryId: UI.inputs.category.value, priority: UI.inputs.priority.value,
+            categoryId: UI.inputs.category.value, 
+            priority: UI.inputs.priority.value,
             recurrence: UI.inputs.recurrence.value,
-            order: existingTask ? existingTask.order : Date.now(), notified: existingTask ? existingTask.notified : false,
+            order: existingTask ? existingTask.order : Date.now(), 
+            notified: existingTask ? existingTask.notified : false,
             completionDate: existingTask ? existingTask.completionDate : null
         };
-        if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission();
-        await dbQuery('readwrite', 'put', task); closeSheet();
-        renderList(); renderCalendar();
+        
+        await DB.query('readwrite', 'put', task); 
+        closeAllModals();
+        renderList(); 
+        renderCalendar();
     });
 
-    // ================= MAIN RENDERING =================
+    // ================= RENDERING LOGIC =================
+
     const renderList = async () => {
-        let tasks = await dbQuery('readonly', 'getAll');
-        const priorityWeight = { high: 3, medium: 2, low: 1 };
+        if (state.activeView !== CONFIG.VIEWS.LIST && state.activeView !== CONFIG.VIEWS.SETTINGS) return;
+
+        let tasks = await DB.query('readonly', 'getAll');
+        const priorityWeight = { [CONFIG.PRIORITIES.HIGH]: 3, [CONFIG.PRIORITIES.MEDIUM]: 2, [CONFIG.PRIORITIES.LOW]: 1 };
+        
         tasks.sort((a, b) => {
             const pA = priorityWeight[a.priority] || 2;
             const pB = priorityWeight[b.priority] || 2;
@@ -260,13 +360,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const todayStr = new Date().toLocaleDateString('en-CA');
         let todayTotal = 0; let todayDone = 0;
 
-        UI.list.active.innerHTML = ''; UI.list.completed.innerHTML = '';
+        UI.list.active.innerHTML = ''; 
+        if (UI.list.completed) UI.list.completed.innerHTML = '';
 
         const compTasks = [];
         let cCount = 0;
 
         tasks.forEach(task => {
-            // Stats
             if (task.dueDate && task.dueDate.startsWith(todayStr)) {
                 todayTotal++;
                 if (task.completed) todayDone++;
@@ -278,15 +378,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Active filters
             if (state.search && !task.title.toLowerCase().includes(state.search) && !(task.description && task.description.toLowerCase().includes(state.search))) return;
-            if (state.category !== 'all' && task.categoryId !== state.category) return;
+            if (state.category !== CONFIG.CATEGORIES.ALL && task.categoryId !== state.category) return;
 
-            const li = createTaskLi(task);
-            UI.list.active.appendChild(li);
+            UI.list.active.appendChild(createTaskLi(task));
         });
 
-        // Render Progress
+        // Progress
         if (todayTotal > 0) {
             const pct = Math.round((todayDone / todayTotal) * 100);
             if (UI.progress.text) UI.progress.text.textContent = pct + '%';
@@ -296,27 +394,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (UI.progress.bar) UI.progress.bar.style.width = '0%';
         }
 
-        // Render Completed Grouped By Date
-        const compByDate = {};
-        compTasks.sort((a, b) => (b.completionDate || 0) - (a.completionDate || 0)).forEach(t => {
-            let cdStr = 'Раніше';
-            if (t.completionDate) {
-                const cdDateStr = new Date(t.completionDate).toLocaleDateString('en-CA');
-                const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-                if (cdDateStr === todayStr) cdStr = 'Сьогодні';
-                else if (cdDateStr === yesterday.toLocaleDateString('en-CA')) cdStr = 'Вчора';
-                else cdStr = new Date(t.completionDate).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' });
-            }
-            if (!compByDate[cdStr]) compByDate[cdStr] = [];
-            compByDate[cdStr].push(t);
-        });
-
-        for (const dateStr in compByDate) {
-            const div = document.createElement('div'); div.className = 'date-divider'; div.textContent = dateStr;
-            UI.list.completed.appendChild(div);
-            compByDate[dateStr].forEach(task => {
-                UI.list.completed.appendChild(createTaskLi(task));
+        // Completed
+        if (UI.list.completed) {
+            const compByDate = {};
+            compTasks.sort((a, b) => (b.completionDate || 0) - (a.completionDate || 0)).forEach(t => {
+                let cdStr = 'Раніше';
+                if (t.completionDate) {
+                    const cdDateStr = new Date(t.completionDate).toLocaleDateString('en-CA');
+                    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+                    if (cdDateStr === todayStr) cdStr = 'Сьогодні';
+                    else if (cdDateStr === yesterday.toLocaleDateString('en-CA')) cdStr = 'Вчора';
+                    else cdStr = new Date(t.completionDate).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' });
+                }
+                if (!compByDate[cdStr]) compByDate[cdStr] = [];
+                compByDate[cdStr].push(t);
             });
+
+            for (const dateStr in compByDate) {
+                const div = document.createElement('div'); div.className = 'date-divider'; div.textContent = dateStr;
+                UI.list.completed.appendChild(div);
+                compByDate[dateStr].forEach(task => {
+                    UI.list.completed.appendChild(createTaskLi(task));
+                });
+            }
         }
 
         if (UI.history.count) UI.history.count.textContent = cCount;
@@ -324,49 +424,86 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const createTaskLi = (task) => {
-        const li = document.createElement('li'); li.className = `todo-item ${task.completed ? 'completed' : ''}`; li.setAttribute('data-id', task.id);
+        const li = document.createElement('li'); 
+        li.className = `todo-item ${task.completed ? 'completed' : ''}`; 
+        li.setAttribute('data-id', task.id);
+        
         const isOverdue = !task.completed && task.dueDate && new Date(task.dueDate) < new Date() ? 'overdue' : '';
-        const dh = task.dueDate ? `<div class="todo-meta ${isOverdue}">📅 ${fDate(task.dueDate)}${task.recurrence && task.recurrence !== 'none' ? ' 🔄' : ''}</div>` : '';
+        const metaHtml = task.dueDate ? `<div class="todo-meta ${isOverdue}">📅 ${Utils.formatDateTime(task.dueDate)}${task.recurrence && task.recurrence !== CONFIG.RECURRENCE.NONE ? ' 🔄' : ''}</div>` : '';
 
         li.innerHTML = `
             <div class="checkbox"></div>
             <div class="task-content">
-                <span class="todo-title"><div class="priority-dot prio-${task.priority || 'medium'}"></div>${esc(task.title)}</span>
-                ${task.description ? `<p class="todo-desc">${esc(task.description)}</p>` : ''}
-                ${dh}
+                <span class="todo-title"><div class="priority-dot prio-${task.priority || CONFIG.PRIORITIES.MEDIUM}"></div>${Utils.escapeHTML(task.title)}</span>
+                ${task.description ? `<p class="todo-desc">${Utils.escapeHTML(task.description)}</p>` : ''}
+                ${metaHtml}
             </div>
             <div class="task-actions" style="gap:12px; align-items:center;">
-                ${!task.completed && task.dueDate ? `<button class="icon-btn bell-btn" style="color: var(--primary-color);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>` : ''}
-                <button class="icon-btn edit-btn" style="color: var(--primary-color);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-                <button class="icon-btn delete-btn" style="color: var(--primary-color);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
-                <div class="drag-handle icon-btn" style="cursor: grab; color: var(--text-secondary); touch-action: none;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></div>
+                ${!task.completed && task.dueDate ? `<button class="icon-btn bell-btn" aria-label="Google Calendar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>` : ''}
+                <button class="icon-btn edit-btn" aria-label="Edit"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                <button class="icon-btn delete-btn" aria-label="Delete"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                <div class="drag-handle icon-btn" style="color: var(--text-secondary);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></div>
             </div>
         `;
 
         li.querySelector('.checkbox').addEventListener('click', async () => {
-            const wasCompleted = task.completed; task.completed = !task.completed;
+            const wasCompleted = task.completed; 
+            task.completed = !task.completed;
+            
             if (!wasCompleted) {
-                playCompleteSound();
-                task.completionDate = Date.now(); // Record date
-                if (task.recurrence && task.recurrence !== 'none') {
-                    const clone = { ...task, id: Date.now().toString() + Math.random().toString(36).substr(2, 5), completed: false, notified: false, completionDate: null };
+                AudioSystem.play();
+                task.completionDate = Date.now();
+                
+                if (task.recurrence && task.recurrence !== CONFIG.RECURRENCE.NONE && !task.cloned) {
+                    task.cloned = true;
+                    const clone = { 
+                        ...task, 
+                        id: Utils.generateId(), 
+                        completed: false, 
+                        cloned: false,
+                        notified: false, 
+                        completionDate: null 
+                    };
                     if (clone.dueDate) {
                         const date = new Date(clone.dueDate);
-                        if (clone.recurrence === 'daily') date.setDate(date.getDate() + 1); else if (clone.recurrence === 'weekly') date.setDate(date.getDate() + 7); else if (clone.recurrence === 'monthly') date.setMonth(date.getMonth() + 1);
+                        if (clone.recurrence === CONFIG.RECURRENCE.DAILY) date.setDate(date.getDate() + 1); 
+                        else if (clone.recurrence === CONFIG.RECURRENCE.WEEKLY) date.setDate(date.getDate() + 7); 
+                        else if (clone.recurrence === CONFIG.RECURRENCE.MONTHLY) date.setMonth(date.getMonth() + 1);
                         clone.dueDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
                     }
-                    await dbQuery('readwrite', 'put', clone);
+                    await DB.query('readwrite', 'put', clone);
                 }
-            } else { task.completionDate = null; }
-            await dbQuery('readwrite', 'put', task); renderList(); renderCalendar();
+            } else { 
+                task.completionDate = null; 
+                task.cloned = false;
+            }
+            
+            await DB.query('readwrite', 'put', task); 
+            renderList(); 
+            renderCalendar();
         });
 
-        if (!task.completed && task.dueDate) li.querySelector('.bell-btn').addEventListener('click', () => generateGCalLink(task));
+        if (!task.completed && task.dueDate) {
+            li.querySelector('.bell-btn').addEventListener('click', () => {
+                const fmtDate = (d) => d.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z';
+                const start = new Date(task.dueDate);
+                const end = new Date(start.getTime() + 30 * 60000);
+                const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&dates=${fmtDate(start)}/${fmtDate(end)}&details=${encodeURIComponent(task.description || '')}`;
+                window.open(url, '_blank');
+            });
+        }
+        
         li.querySelector('.edit-btn').addEventListener('click', () => openSheet(task));
+        
         li.querySelector('.delete-btn').addEventListener('click', () => {
-            li.style.transform = 'scale(0.9)'; li.style.opacity = '0';
-            setTimeout(async () => { await dbQuery('readwrite', 'delete', task.id); renderList(); renderCalendar(); }, 200);
+            li.classList.add('deleting');
+            setTimeout(async () => { 
+                await DB.query('readwrite', 'delete', task.id); 
+                renderList(); 
+                renderCalendar(); 
+            }, 300);
         });
+        
         li.querySelector('.drag-handle').addEventListener('mousedown', (e) => startDrag(e, li));
         li.querySelector('.drag-handle').addEventListener('touchstart', (e) => startDrag(e, li), { passive: false });
 
@@ -374,38 +511,28 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ================= DRAG AND DROP =================
-    let draggingEl = null;
-    let placeholder = null;
-    let startY = 0;
-    let startTop = 0;
-    let autoScrollInterval = null;
-    let lastClientX = 0;
-    let lastClientY = 0;
 
     const startDrag = (e, li) => {
         if (li.classList.contains('completed')) return;
-        if (e.type === 'touchstart') e.preventDefault(); // prevent scrolling
+        if (e.type === 'touchstart') e.preventDefault();
         
-        draggingEl = li;
+        state.draggingEl = li;
         const rect = li.getBoundingClientRect();
-        startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-        startTop = rect.top;
+        state.dragStartY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+        state.dragStartTop = rect.top;
 
-        placeholder = document.createElement('li');
-        placeholder.className = 'todo-item placeholder';
-        placeholder.style.height = `${rect.height}px`;
-        placeholder.style.opacity = '0';
-        placeholder.style.margin = '0';
+        state.placeholder = document.createElement('li');
+        state.placeholder.className = 'todo-item placeholder';
+        state.placeholder.style.height = `${rect.height}px`;
+        state.placeholder.style.opacity = '0';
         
-        li.parentNode.insertBefore(placeholder, li);
+        li.parentNode.insertBefore(state.placeholder, li);
         
         li.classList.add('is-dragging');
         li.style.position = 'fixed';
         li.style.width = `${rect.width}px`;
         li.style.top = `${rect.top}px`;
         li.style.left = `${rect.left}px`;
-        li.style.zIndex = '1000';
-        li.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
         li.style.transition = 'none';
 
         document.addEventListener('mousemove', onDragMove, { passive: false });
@@ -415,42 +542,42 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const handleOverlap = (clientX, clientY) => {
-        if (!draggingEl) return;
-        draggingEl.style.visibility = 'hidden';
+        if (!state.draggingEl) return;
+        state.draggingEl.style.visibility = 'hidden';
         const elUnder = document.elementFromPoint(clientX, clientY);
-        draggingEl.style.visibility = 'visible';
+        state.draggingEl.style.visibility = 'visible';
 
         if (!elUnder) return;
         const targetLi = elUnder.closest('li.todo-item:not(.is-dragging):not(.completed)');
-        if (targetLi && targetLi !== placeholder) {
+        if (targetLi && targetLi !== state.placeholder) {
             const rect = targetLi.getBoundingClientRect();
             const mid = rect.top + rect.height / 2;
             if (clientY < mid) {
-                targetLi.parentNode.insertBefore(placeholder, targetLi);
+                targetLi.parentNode.insertBefore(state.placeholder, targetLi);
             } else {
-                targetLi.parentNode.insertBefore(placeholder, targetLi.nextSibling);
+                targetLi.parentNode.insertBefore(state.placeholder, targetLi.nextSibling);
             }
         }
     };
 
     const onDragMove = (e) => {
-        if (!draggingEl) return;
+        if (!state.draggingEl) return;
         e.preventDefault();
-        lastClientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-        lastClientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+        state.lastClientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+        state.lastClientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
         
-        const deltaY = lastClientY - startY;
-        draggingEl.style.top = `${startTop + deltaY}px`;
+        const deltaY = state.lastClientY - state.dragStartY;
+        state.draggingEl.style.top = `${state.dragStartTop + deltaY}px`;
 
-        handleOverlap(lastClientX, lastClientY);
+        handleOverlap(state.lastClientX, state.lastClientY);
 
-        const contentEl = draggingEl.closest('.content');
+        const contentEl = state.draggingEl.closest('.content');
         if (contentEl) {
             const rect = contentEl.getBoundingClientRect();
             const threshold = 100;
-            if (lastClientY < rect.top + threshold) {
+            if (state.lastClientY < rect.top + threshold) {
                 startAutoScroll(-1, contentEl);
-            } else if (lastClientY > rect.bottom - threshold) {
+            } else if (state.lastClientY > rect.bottom - threshold) {
                 startAutoScroll(1, contentEl);
             } else {
                 stopAutoScroll();
@@ -459,22 +586,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const startAutoScroll = (direction, contentEl) => {
-        if (autoScrollInterval) return;
-        autoScrollInterval = setInterval(() => {
+        if (state.autoScrollInterval) return;
+        state.autoScrollInterval = setInterval(() => {
             contentEl.scrollTop += direction * 15;
-            handleOverlap(lastClientX, lastClientY);
+            handleOverlap(state.lastClientX, state.lastClientY);
         }, 16);
     };
 
     const stopAutoScroll = () => {
-        if (autoScrollInterval) {
-            clearInterval(autoScrollInterval);
-            autoScrollInterval = null;
+        if (state.autoScrollInterval) {
+            clearInterval(state.autoScrollInterval);
+            state.autoScrollInterval = null;
         }
     };
 
     const onDragEnd = async () => {
-        if (!draggingEl) return;
+        if (!state.draggingEl) return;
         
         stopAutoScroll();
         
@@ -483,18 +610,18 @@ document.addEventListener('DOMContentLoaded', () => {
         document.removeEventListener('mouseup', onDragEnd);
         document.removeEventListener('touchend', onDragEnd);
 
-        placeholder.parentNode.insertBefore(draggingEl, placeholder);
-        placeholder.remove();
+        state.placeholder.parentNode.insertBefore(state.draggingEl, state.placeholder);
+        state.placeholder.remove();
 
-        draggingEl.classList.remove('is-dragging');
-        draggingEl.style = '';
+        state.draggingEl.classList.remove('is-dragging');
+        state.draggingEl.style = '';
 
         const listItems = Array.from(UI.list.active.querySelectorAll('li.todo-item'));
-        const index = listItems.indexOf(draggingEl);
-        const taskId = draggingEl.getAttribute('data-id');
+        const index = listItems.indexOf(state.draggingEl);
+        const taskId = state.draggingEl.getAttribute('data-id');
         
         let newOrder = Date.now();
-        const tasks = await dbQuery('readonly', 'getAll');
+        const tasks = await DB.query('readonly', 'getAll');
         const taskObj = tasks.find(t => t.id === taskId);
         
         if (taskObj) {
@@ -513,30 +640,32 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             taskObj.order = newOrder;
-            await dbQuery('readwrite', 'put', taskObj);
+            await DB.query('readwrite', 'put', taskObj);
             renderList();
         }
 
-        draggingEl = null;
-        placeholder = null;
+        state.draggingEl = null;
+        state.placeholder = null;
     };
 
-    // ================= CALENDAR & BACKLOG RENDERING =================
-    let calDate = new Date();
-    let calView = 'month';
-    const fDateStr = (y, m, d) => `${y}-${(m + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+    window.addEventListener('blur', onDragEnd);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) onDragEnd(); });
+
+    // ================= CALENDAR =================
 
     const renderCalendar = async () => {
+        if (state.activeView !== CONFIG.VIEWS.CALENDAR) return;
+
         UI.cal.container.classList.remove('cal-view-month', 'cal-view-week', 'cal-view-day');
-        UI.cal.container.classList.add(`cal-view-${calView}`);
+        UI.cal.container.classList.add(`cal-view-${state.calView}`);
         
-        if (calView === 'month') await renderMonthView();
-        else if (calView === 'week') await renderWeekView();
-        else if (calView === 'day') await renderDayView();
+        if (state.calView === 'month') await renderMonthView();
+        else if (state.calView === 'week') await renderWeekView();
+        else if (state.calView === 'day') await renderDayView();
     };
 
     const renderMonthView = async () => {
-        const y = calDate.getFullYear(); const m = calDate.getMonth();
+        const y = state.calDate.getFullYear(); const m = state.calDate.getMonth();
         UI.cal.title.textContent = new Date(y, m).toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
         UI.cal.grid.innerHTML = '';
         UI.cal.agenda.innerHTML = '';
@@ -545,10 +674,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const emptyCells = firstDay === 0 ? 6 : firstDay - 1;
         const daysInMonth = new Date(y, m + 1, 0).getDate();
 
-        const startStr = fDateStr(y, m, 1);
-        const endStr = fDateStr(y, m, daysInMonth) + 'T23:59:59';
+        const startStr = Utils.formatDateISO(y, m, 1);
+        const endStr = Utils.formatDateISO(y, m, daysInMonth) + 'T23:59:59';
 
-        const allTasks = await dbQuery('readonly', 'getAll');
+        const allTasks = await DB.query('readonly', 'getAll');
         const calTasks = allTasks.filter(t => t.dueDate && t.dueDate >= startStr && t.dueDate <= endStr && !t.completed);
 
         for (let i = 0; i < emptyCells; i++) {
@@ -556,10 +685,10 @@ document.addEventListener('DOMContentLoaded', () => {
             UI.cal.grid.appendChild(d);
         }
 
-        const todayStr = fDateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+        const todayStr = Utils.formatDateISO(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
 
         for (let i = 1; i <= daysInMonth; i++) {
-            const ds = fDateStr(y, m, i);
+            const ds = Utils.formatDateISO(y, m, i);
             const dBtn = document.createElement('div');
             dBtn.className = 'calendar-day'; dBtn.setAttribute('data-date', ds);
             if (ds === todayStr) dBtn.classList.add('today');
@@ -569,7 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const dotsArea = dBtn.querySelector('.cal-dots-area');
             dsTasks.slice(0, 4).forEach(t => {
                 const dot = document.createElement('div');
-                dot.className = `cal-dot prio-${t.priority || 'medium'}`;
+                dot.className = `cal-dot prio-${t.priority || CONFIG.PRIORITIES.MEDIUM}`;
                 dotsArea.appendChild(dot);
             });
             if (dsTasks.length > 4) {
@@ -586,27 +715,26 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.cal.grid.innerHTML = '';
         UI.cal.agenda.innerHTML = '';
         
-        // Find Monday of the current week
-        const startOfWeek = new Date(calDate);
+        const startOfWeek = new Date(state.calDate);
         const day = startOfWeek.getDay();
         const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
         startOfWeek.setDate(diff);
         
         UI.cal.title.textContent = `${startOfWeek.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} - ${new Date(startOfWeek.getTime() + 6 * 86400000).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
-        const allTasks = await dbQuery('readonly', 'getAll');
-        const todayStr = fDateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+        const allTasks = await DB.query('readonly', 'getAll');
+        const todayStr = Utils.formatDateISO(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
         const weekTasks = [];
 
         for (let i = 0; i < 7; i++) {
             const d = new Date(startOfWeek);
             d.setDate(startOfWeek.getDate() + i);
-            const ds = fDateStr(d.getFullYear(), d.getMonth(), d.getDate());
+            const ds = Utils.formatDateISO(d.getFullYear(), d.getMonth(), d.getDate());
             
             const dBtn = document.createElement('div');
             dBtn.className = 'calendar-day'; dBtn.setAttribute('data-date', ds);
             if (ds === todayStr) dBtn.classList.add('today');
-            if (ds === fDateStr(calDate.getFullYear(), calDate.getMonth(), calDate.getDate())) dBtn.classList.add('selected');
+            if (ds === Utils.formatDateISO(state.calDate.getFullYear(), state.calDate.getMonth(), state.calDate.getDate())) dBtn.classList.add('selected');
             
             dBtn.innerHTML = `<span>${d.getDate()}</span><div class="cal-dots-area"></div>`;
             
@@ -616,12 +744,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const dotsArea = dBtn.querySelector('.cal-dots-area');
             dsTasks.slice(0, 4).forEach(t => {
                 const dot = document.createElement('div');
-                dot.className = `cal-dot prio-${t.priority || 'medium'}`;
+                dot.className = `cal-dot prio-${t.priority || CONFIG.PRIORITIES.MEDIUM}`;
                 dotsArea.appendChild(dot);
             });
 
             dBtn.addEventListener('click', () => {
-                calDate = new Date(d);
+                state.calDate = new Date(d);
                 renderCalendar();
             });
             UI.cal.grid.appendChild(dBtn);
@@ -634,14 +762,13 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.cal.grid.innerHTML = '';
         UI.cal.agenda.innerHTML = '';
         
-        const ds = fDateStr(calDate.getFullYear(), calDate.getMonth(), calDate.getDate());
-        UI.cal.title.textContent = calDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
+        const ds = Utils.formatDateISO(state.calDate.getFullYear(), state.calDate.getMonth(), state.calDate.getDate());
+        UI.cal.title.textContent = state.calDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
 
-        const allTasks = await dbQuery('readonly', 'getAll');
+        const allTasks = await DB.query('readonly', 'getAll');
         const dsTasks = allTasks.filter(t => t.dueDate && t.dueDate.startsWith(ds) && !t.completed);
 
-        // Still show the week strip for navigation
-        const startOfWeek = new Date(calDate);
+        const startOfWeek = new Date(state.calDate);
         const day = startOfWeek.getDay();
         const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
         startOfWeek.setDate(diff);
@@ -649,22 +776,22 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < 7; i++) {
             const d = new Date(startOfWeek);
             d.setDate(startOfWeek.getDate() + i);
-            const dds = fDateStr(d.getFullYear(), d.getMonth(), d.getDate());
+            const dds = Utils.formatDateISO(d.getFullYear(), d.getMonth(), d.getDate());
             
             const dBtn = document.createElement('div');
             dBtn.className = 'calendar-day';
             if (dds === ds) dBtn.classList.add('selected');
-            if (dds === fDateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())) dBtn.classList.add('today');
+            if (dds === Utils.formatDateISO(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())) dBtn.classList.add('today');
             
             dBtn.innerHTML = `<span>${d.getDate()}</span>`;
             dBtn.addEventListener('click', () => {
-                calDate = new Date(d);
+                state.calDate = new Date(d);
                 renderCalendar();
             });
             UI.cal.grid.appendChild(dBtn);
         }
 
-        renderAgenda([{ date: calDate, tasks: dsTasks }]);
+        renderAgenda([{ date: state.calDate, tasks: dsTasks }]);
     };
 
     const renderAgenda = (dayGroups) => {
@@ -685,22 +812,22 @@ document.addEventListener('DOMContentLoaded', () => {
             header.textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
             
             groupDiv.appendChild(header);
-            
-            group.tasks.forEach(task => {
-                const li = createTaskLi(task);
-                groupDiv.appendChild(li);
-            });
-            
+            group.tasks.forEach(task => groupDiv.appendChild(createTaskLi(task)));
             UI.cal.agenda.appendChild(groupDiv);
         });
     };
 
     const attachDayEvents = (dBtn, ds, dsTasks, y, m, i) => {
         let pressTimer;
-        dBtn.addEventListener('touchstart', (e) => { pressTimer = setTimeout(() => { openSheet(null, ds); navigator.vibrate?.(50); }, 600); }, { passive: true });
+        dBtn.addEventListener('touchstart', () => { 
+            pressTimer = setTimeout(() => { 
+                openSheet(null, ds); 
+                Utils.vibrate(); 
+            }, 600); 
+        }, { passive: true });
         dBtn.addEventListener('touchmove', () => clearTimeout(pressTimer));
         dBtn.addEventListener('touchend', () => clearTimeout(pressTimer));
-        dBtn.addEventListener('mousedown', (e) => { pressTimer = setTimeout(() => openSheet(null, ds), 600); });
+        dBtn.addEventListener('mousedown', () => { pressTimer = setTimeout(() => openSheet(null, ds), 600); });
         dBtn.addEventListener('mouseup', () => clearTimeout(pressTimer));
         dBtn.addEventListener('mouseleave', () => clearTimeout(pressTimer));
 
@@ -718,117 +845,123 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dsTasks.length === 0) { UI.daily.list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:14px;padding: 10px;">Немає завдань. Створіть нове.</p>'; return; }
         dsTasks.forEach(t => {
             const li = document.createElement('li'); li.className = 'todo-item';
-            li.innerHTML = `<div class="priority-dot prio-${t.priority}"></div> <span style="flex:1;font-size:15px;color:var(--text-primary);">${esc(t.title)}</span>`;
+            li.innerHTML = `<div class="priority-dot prio-${t.priority}"></div> <span style="flex:1;font-size:15px;color:var(--text-primary);">${Utils.escapeHTML(t.title)}</span>`;
             UI.daily.list.appendChild(li);
         });
     };
 
     UI.cal.prev.addEventListener('click', () => {
-        if (calView === 'month') calDate.setMonth(calDate.getMonth() - 1);
-        else if (calView === 'week') calDate.setDate(calDate.getDate() - 7);
-        else calDate.setDate(calDate.getDate() - 1);
+        if (state.calView === 'month') state.calDate.setMonth(state.calDate.getMonth() - 1);
+        else if (state.calView === 'week') state.calDate.setDate(state.calDate.getDate() - 7);
+        else state.calDate.setDate(state.calDate.getDate() - 1);
         renderCalendar();
     });
     UI.cal.next.addEventListener('click', () => {
-        if (calView === 'month') calDate.setMonth(calDate.getMonth() + 1);
-        else if (calView === 'week') calDate.setDate(calDate.getDate() + 7);
-        else calDate.setDate(calDate.getDate() + 1);
+        if (state.calView === 'month') state.calDate.setMonth(state.calDate.getMonth() + 1);
+        else if (state.calView === 'week') state.calDate.setDate(state.calDate.getDate() + 7);
+        else state.calDate.setDate(state.calDate.getDate() + 1);
         renderCalendar();
     });
 
     UI.cal.viewBtns.forEach(btn => btn.addEventListener('click', (e) => {
         UI.cal.viewBtns.forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
-        calView = e.target.getAttribute('data-view');
+        state.calView = e.target.getAttribute('data-view');
         renderCalendar();
     }));
 
+    UI.daily.close.addEventListener('click', () => { 
+        UI.daily.sheet.classList.remove('open'); 
+        UI.overlay.classList.remove('open'); 
+        renderCalendar(); 
+    });
 
-    UI.daily.close.addEventListener('click', () => { UI.daily.sheet.classList.remove('open'); UI.overlay.classList.remove('open'); renderCalendar(); });
+    // ================= HABITS =================
 
-    // ================= HABITS TRACKER (CSS Grid, today-only) =================
-    let habitsDate = new Date();
     const WK_COLORS = ['#b388ff', '#69f0ae', '#ffb74d', '#ff5252', '#64b5f6'];
-    const DAY_NAMES = ['\u041f\u043d', '\u0412\u0442', '\u0421\u0440', '\u0427\u0442', '\u041f\u0442', '\u0421\u0431', '\u041d\u0434'];
+    const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
     const DONUT_R = 15, DONUT_C = 2 * Math.PI * DONUT_R;
     const WK_R = 12, WK_C = 2 * Math.PI * WK_R;
-    const getWeeks = (y, m) => {
-        const dim = new Date(y, m + 1, 0).getDate();
-        const weeks = []; let wk = [];
-        for (let d = 1; d <= dim; d++) {
-            wk.push(d);
-            const dow = new Date(y, m, d).getDay() || 7;
-            if (dow === 7 || d === dim) { weeks.push(wk); wk = []; }
-        }
-        return weeks;
-    };
+
     const dayKey = d => `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+    
     const renderHabits = async () => {
-        const y = habitsDate.getFullYear(), m = habitsDate.getMonth();
+        if (state.activeView !== CONFIG.VIEWS.HABITS) return;
+
+        const y = state.habitsDate.getFullYear(), m = state.habitsDate.getMonth();
         const dim = new Date(y, m + 1, 0).getDate();
         const now = new Date();
         const todayD = now.getFullYear() === y && now.getMonth() === m ? now.getDate() : -1;
         UI.habits.monthTitle.textContent = new Date(y, m).toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
+        
+        const getWeeks = (y, m) => {
+            const daysInMonth = new Date(y, m + 1, 0).getDate();
+            const weeks = []; let wk = [];
+            for (let d = 1; d <= daysInMonth; d++) {
+                wk.push(d);
+                const dow = new Date(y, m, d).getDay() || 7;
+                if (dow === 7 || d === daysInMonth) { weeks.push(wk); wk = []; }
+            }
+            return weeks;
+        };
         const weeks = getWeeks(y, m);
-        const habits = (await dbHabits('readonly', 'getAll')) || [];
+        const habits = (await DB.habits('readonly', 'getAll')) || [];
         const tbl = UI.habits.table;
         tbl.innerHTML = '';
-        const fb = document.getElementById('habits-weekly-donuts').closest('.ht-footer-bar');
-        if (fb) {
-            const items = fb.querySelectorAll('.hw-item');
-            items.forEach(i => i.remove());
-        }
-        const cols = `130px repeat(${dim}, 1fr) 50px 50px`;
-        tbl.style.display = 'grid';
-        tbl.style.gridTemplateColumns = cols;
-        if (fb) {
-            fb.style.display = 'flex';
-            fb.style.flexDirection = 'column';
-            fb.style.gap = '12px';
-        }
+        
         if (!habits.length) {
             tbl.style.gridTemplateColumns = '1fr';
-            tbl.innerHTML = '<div class="ht-empty"><div class="ht-empty-icon">\u{1F4CB}</div><p>\u041f\u043e\u043a\u0438 \u043d\u0435\u043c\u0430\u0454 \u0437\u0432\u0438\u0447\u043e\u043a.<br>\u0414\u043e\u0434\u0430\u0439\u0442\u0435 \u043f\u0435\u0440\u0448\u0443!</p></div>';
+            tbl.innerHTML = '<div class="ht-empty"><div class="ht-empty-icon">📋</div><p>Поки немає звичок.<br>Додайте першу!</p></div>';
             if (UI.habits.linePath) UI.habits.linePath.setAttribute('points', '');
             if (UI.habits.donutRing) UI.habits.donutRing.style.strokeDashoffset = DONUT_C;
             if (UI.habits.donutPct) UI.habits.donutPct.textContent = '0%';
             return;
         }
-        const nameH = document.createElement('div'); nameH.className = 'ht-name-hd'; nameH.textContent = '\u0429\u041e\u0414\u0415\u041d\u041d\u0406 \u0417\u0412\u0418\u0427\u041a\u0418';
+
+        tbl.style.gridTemplateColumns = `130px repeat(${dim}, 1fr) 50px 50px`;
+        
+        const nameH = document.createElement('div'); nameH.className = 'ht-name-hd'; nameH.textContent = 'ЩОДЕННІ ЗВИЧКИ';
         nameH.style.gridColumn = '1'; nameH.style.gridRow = '1 / 3'; tbl.appendChild(nameH);
+        
         let colIdx = 2;
         const weekColRanges = [];
         weeks.forEach((wk, wi) => {
             const start = colIdx, end = colIdx + wk.length;
             weekColRanges.push({ start, end, days: wk });
             const lbl = document.createElement('div'); lbl.className = `ht-wk-label wk-${wi + 1}`;
-            lbl.textContent = `\u0422\u0418\u0416\u0414\u0415\u041d\u042c ${wi + 1}`;
+            lbl.textContent = `ТИЖДЕНЬ ${wi + 1}`;
             lbl.style.gridColumn = `${start} / ${end}`; lbl.style.gridRow = '1'; tbl.appendChild(lbl);
             colIdx = end;
         });
-        const goalH = document.createElement('div'); goalH.className = 'ht-goal-hd'; goalH.textContent = '\u0426\u0406\u041b\u042c';
+
+        const goalH = document.createElement('div'); goalH.className = 'ht-goal-hd'; goalH.textContent = 'ЦІЛЬ';
         goalH.style.gridColumn = `${dim + 2}`; goalH.style.gridRow = '1 / 3'; tbl.appendChild(goalH);
-        const progH = document.createElement('div'); progH.className = 'ht-prog-hd'; progH.textContent = '\u041f\u0420\u041e\u0413\u0420\u0415\u0421';
+        const progH = document.createElement('div'); progH.className = 'ht-prog-hd'; progH.textContent = 'ПРОГРЕС';
         progH.style.gridColumn = `${dim + 3}`; progH.style.gridRow = '1 / 3'; tbl.appendChild(progH);
+
         for (let d = 1; d <= dim; d++) {
             const dow = new Date(y, m, d).getDay() || 7;
             const dh = document.createElement('div'); dh.className = 'ht-day-hd';
             dh.innerHTML = `${DAY_NAMES[dow - 1]}<span class="dn">${d}</span>`;
             dh.style.gridColumn = `${d + 1}`; dh.style.gridRow = '2'; tbl.appendChild(dh);
         }
+
         const dailyData = {}; for (let d = 1; d <= dim; d++) dailyData[d] = { done: 0, total: habits.length };
         const weekStats = weeks.map(() => ({ done: 0, total: 0 }));
+
         habits.forEach((h, hi) => {
             const rowNum = hi + 3;
             const nc = document.createElement('div'); nc.className = 'ht-name-cell';
-            nc.innerHTML = `<span class="ht-emoji">${h.emoji || '\u{1F4CC}'}</span><span class="ht-title">${esc(h.title)}</span>`;
+            nc.innerHTML = `<span class="ht-emoji">${h.emoji || '📌'}</span><span class="ht-title">${Utils.escapeHTML(h.title)}</span>`;
             nc.addEventListener('click', () => openHabitSheet(h));
             nc.style.gridColumn = '1'; nc.style.gridRow = `${rowNum}`; tbl.appendChild(nc);
+            
             let done = 0, possible = 0;
             for (let d = 1; d <= dim; d++) {
                 const dk = dayKey(new Date(y, m, d)); const on = h.days && h.days[dk];
                 const cell = document.createElement('div'); cell.className = 'ht-ck-cell';
-                const ck = document.createElement('div'); let cls = 'ht-ck'; if (on) cls += ' on';
+                const ck = document.createElement('div'); 
+                let cls = 'ht-ck'; if (on) cls += ' on';
                 if (d === todayD) cls += ' today-active'; else if (d < todayD || todayD === -1) cls += ' past'; else cls += ' future';
                 ck.className = cls; if (d === todayD) ck.addEventListener('click', () => toggleHabitDay(h.id, dk));
                 cell.appendChild(ck); cell.style.gridColumn = `${d + 1}`; cell.style.gridRow = `${rowNum}`; tbl.appendChild(cell);
@@ -844,6 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pc.innerHTML = `<span>${done}/${possible}</span><div class="ht-mini-bar"><div class="ht-mini-fill" style="width:${pct}%"></div></div>`;
             pc.style.gridColumn = `${dim + 3}`; pc.style.gridRow = `${rowNum}`; tbl.appendChild(pc);
         });
+
         const chartVals = []; for (let d = 1; d <= dim; d++) {
             const dd = dailyData[d]; chartVals.push(dd.total > 0 ? Math.round(dd.done / dd.total * 100) : 0);
         }
@@ -855,56 +989,76 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (UI.habits.linePath) UI.habits.linePath.setAttribute('points', pts.join(' '));
         if (UI.habits.lineFill) UI.habits.lineFill.setAttribute('points', `${pad},${svgH} ${pts.join(' ')} ${(svgW - pad).toFixed(1)},${svgH}`);
+        
         let totalD = 0, totalP = 0; weekStats.forEach(ws => { totalD += ws.done; totalP += ws.total; });
         const overallPct = totalP > 0 ? Math.round(totalD / totalP * 100) : 0;
         if (UI.habits.donutPct) UI.habits.donutPct.textContent = overallPct + '%';
         if (UI.habits.donutRing) UI.habits.donutRing.style.strokeDashoffset = DONUT_C - (overallPct / 100) * DONUT_C;
+        
+        UI.habits.weeklyDonuts.innerHTML = '';
         weeks.forEach((wk, wi) => {
             const ws = weekStats[wi]; const wpct = ws.total > 0 ? Math.round(ws.done / ws.total * 100) : 0;
             const color = WK_COLORS[wi % WK_COLORS.length]; const offset = WK_C - (wpct / 100) * WK_C;
-            const wr = weekColRanges[wi];
             const item = document.createElement('div'); item.className = 'hw-item';
             item.innerHTML = `<div class="hw-ring-wrap"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="${WK_R}" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="3"/><circle cx="18" cy="18" r="${WK_R}" fill="none" stroke="${color}" stroke-width="3" stroke-dasharray="${WK_C.toFixed(1)} ${WK_C.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition:stroke-dashoffset .5s"/></svg><span class="hw-pct">${wpct}%</span></div><div class="hw-label">Тиж.${wi + 1}</div><div class="hw-counts">${ws.done}/${ws.total}</div>`;
             UI.habits.weeklyDonuts.appendChild(item);
         });
     };
 
-
     const toggleHabitDay = async (id, dk) => {
-        const h = await dbHabits('readonly', 'get', id); if (!h) return;
+        const h = await DB.habits('readonly', 'get', id); 
+        if (!h) return;
         if (!h.days) h.days = {}; h.days[dk] = !h.days[dk];
-        await dbHabits('readwrite', 'put', h); renderHabits();
+        await DB.habits('readwrite', 'put', h); 
+        renderHabits();
     };
+
     const openHabitSheet = (habit = null) => {
         if (habit) {
-            UI.habits.sheetTitle.textContent = '\u0420\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u0442\u0438 \u0437\u0432\u0438\u0447\u043a\u0443';
+            UI.habits.sheetTitle.textContent = 'Редагувати звичку';
             UI.habits.inputId.value = habit.id; UI.habits.inputTitle.value = habit.title;
             UI.habits.inputEmoji.value = habit.emoji || '';
             UI.habits.deleteBtn.style.display = 'flex';
         } else {
-            UI.habits.sheetTitle.textContent = '\u041d\u043e\u0432\u0430 \u0437\u0432\u0438\u0447\u043a\u0430';
+            UI.habits.sheetTitle.textContent = 'Нова звичка';
             UI.habits.form.reset(); UI.habits.inputId.value = '';
             UI.habits.deleteBtn.style.display = 'none';
         }
         UI.habits.sheet.classList.add('open'); UI.overlay.classList.add('open');
     };
-    const closeHabitSheet = () => { UI.habits.sheet.classList.remove('open'); UI.overlay.classList.remove('open'); };
+
     if (UI.habits.addBtn) UI.habits.addBtn.addEventListener('click', () => openHabitSheet());
-    if (UI.habits.closeSheet) UI.habits.closeSheet.addEventListener('click', closeHabitSheet);
+    if (UI.habits.closeSheet) UI.habits.closeSheet.addEventListener('click', closeAllModals);
+    
     if (UI.habits.form) UI.habits.form.addEventListener('submit', async (e) => {
-        e.preventDefault(); const title = UI.habits.inputTitle.value.trim(); if (!title) return;
+        e.preventDefault(); 
+        const title = UI.habits.inputTitle.value.trim(); if (!title) return;
         const id = UI.habits.inputId.value;
-        let existing = null; if (id) existing = await dbHabits('readonly', 'get', id);
-        const habit = { id: id || Date.now().toString(), title, emoji: UI.habits.inputEmoji.value.trim() || '\u{1F4CC}', days: existing ? existing.days : {}, createdAt: existing ? existing.createdAt : Date.now() };
-        await dbHabits('readwrite', 'put', habit); closeHabitSheet(); renderHabits();
+        let existing = null; if (id) existing = await DB.habits('readonly', 'get', id);
+        const habit = { id: id || Date.now().toString(), title, emoji: UI.habits.inputEmoji.value.trim() || '📌', days: existing ? existing.days : {}, createdAt: existing ? existing.createdAt : Date.now() };
+        await DB.habits('readwrite', 'put', habit); 
+        closeAllModals(); 
+        renderHabits();
     });
-    if (UI.habits.deleteBtn) UI.habits.deleteBtn.addEventListener('click', async () => {
-        const id = UI.habits.inputId.value; if (!id) return;
-        if (confirm('\u0412\u0438\u0434\u0430\u043b\u0438\u0442\u0438 \u0446\u044e \u0437\u0432\u0438\u0447\u043a\u0443?')) { await dbHabits('readwrite', 'delete', id); closeHabitSheet(); renderHabits(); }
-    });
-    if (UI.habits.prev) UI.habits.prev.addEventListener('click', () => { habitsDate.setMonth(habitsDate.getMonth() - 1); renderHabits(); });
-    if (UI.habits.next) UI.habits.next.addEventListener('click', () => { habitsDate.setMonth(habitsDate.getMonth() + 1); renderHabits(); });
+
+    if (UI.habits.deleteBtn) {
+        UI.habits.deleteBtn.addEventListener('click', () => {
+            const id = UI.habits.inputId.value; 
+            if (!id) return;
+            showConfirm('Видалити звичку?', 'Всі дані про виконання цієї звички будуть видалені назавжди.', async () => {
+                await DB.habits('readwrite', 'delete', id); 
+                closeAllModals(); 
+                renderHabits();
+            });
+        });
+    }
+
+    if (UI.habits.prev) UI.habits.prev.addEventListener('click', () => { state.habitsDate.setMonth(state.habitsDate.getMonth() - 1); renderHabits(); });
+    if (UI.habits.next) UI.habits.next.addEventListener('click', () => { state.habitsDate.setMonth(state.habitsDate.getMonth() + 1); renderHabits(); });
 
     // BOOTSTRAP
-    initDB().then(() => { renderList(); renderCalendar(); });
+    DB.init().then(() => { 
+        renderList(); 
+        renderCalendar(); 
+    });
 });

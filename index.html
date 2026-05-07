@@ -11,8 +11,7 @@
     <link rel="icon" href="assets/apple-touch-icon.png">
     <link rel="stylesheet" href="src/style.css?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -269,7 +268,7 @@
         </div>
 
         <!-- Sheet: Аналітика -->
-        <div id="analytics-modal" class="bottom-sheet">
+        <div id="analytics-modal" class="bottom-sheet central-modal">
             <div class="sheet-header">
                 <h2>📊 Ваша активність</h2>
                 <button id="close-analytics" class="icon-btn">✖</button>
@@ -330,9 +329,22 @@
             </form>
         </div>
 
+        <!-- Custom Confirm Dialog -->
+        <div id="custom-confirm" class="custom-confirm">
+            <div class="confirm-title" id="confirm-title">Видалити?</div>
+            <div class="confirm-text" id="confirm-text">Ви впевнені, що хочете це зробити?</div>
+            <div class="confirm-actions">
+                <button class="confirm-btn confirm-no" id="confirm-no">Скасувати</button>
+                <button class="confirm-btn confirm-yes" id="confirm-yes">Так, видалити</button>
+            </div>
+        </div>
+
     </div>
     <script src="src/audio.js?v=4"></script>
-    <script src="src/script.js?v=4"></script>
+    <script src="src/constants.js?v=5"></script>
+    <script src="src/utils.js?v=5"></script>
+    <script src="src/db.js?v=5"></script>
+    <script src="src/script.js?v=5"></script>
 </body>
 
 </html>
