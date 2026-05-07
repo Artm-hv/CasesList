@@ -666,10 +666,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderMonthView = async () => {
         const y = state.calDate.getFullYear(); const m = state.calDate.getMonth();
-        UI.cal.title.textContent = new Date(y, m).toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
-        UI.cal.grid.innerHTML = '';
-        UI.cal.agenda.innerHTML = '';
-
         const firstDay = new Date(y, m, 1).getDay();
         const emptyCells = firstDay === 0 ? 6 : firstDay - 1;
         const daysInMonth = new Date(y, m + 1, 0).getDate();
@@ -677,8 +673,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const startStr = Utils.formatDateISO(y, m, 1);
         const endStr = Utils.formatDateISO(y, m, daysInMonth) + 'T23:59:59';
 
+        // Fetch data first
         const allTasks = await DB.query('readonly', 'getAll');
         const calTasks = allTasks.filter(t => t.dueDate && t.dueDate >= startStr && t.dueDate <= endStr && !t.completed);
+
+        // Update UI in one go
+        UI.cal.title.textContent = new Date(y, m).toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
+        UI.cal.grid.innerHTML = '';
+        UI.cal.agenda.innerHTML = '';
 
         for (let i = 0; i < emptyCells; i++) {
             const d = document.createElement('div'); d.className = 'calendar-day empty';
@@ -712,17 +714,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderWeekView = async () => {
-        UI.cal.grid.innerHTML = '';
-        UI.cal.agenda.innerHTML = '';
-
         const startOfWeek = new Date(state.calDate);
         const day = startOfWeek.getDay();
         const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
         startOfWeek.setDate(diff);
 
-        UI.cal.title.textContent = `${startOfWeek.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} - ${new Date(startOfWeek.getTime() + 6 * 86400000).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}`;
-
+        // Fetch data first
         const allTasks = await DB.query('readonly', 'getAll');
+
+        // Update UI in one go
+        UI.cal.grid.innerHTML = '';
+        UI.cal.agenda.innerHTML = '';
+        UI.cal.title.textContent = `${startOfWeek.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} - ${new Date(startOfWeek.getTime() + 6 * 86400000).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}`;
         const todayStr = Utils.formatDateISO(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
         const weekTasks = [];
 
@@ -759,13 +762,15 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderDayView = async () => {
+        const ds = Utils.formatDateISO(state.calDate.getFullYear(), state.calDate.getMonth(), state.calDate.getDate());
+        
+        // Fetch data first
+        const allTasks = await DB.query('readonly', 'getAll');
+
+        // Update UI in one go
         UI.cal.grid.innerHTML = '';
         UI.cal.agenda.innerHTML = '';
-
-        const ds = Utils.formatDateISO(state.calDate.getFullYear(), state.calDate.getMonth(), state.calDate.getDate());
         UI.cal.title.textContent = state.calDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
-
-        const allTasks = await DB.query('readonly', 'getAll');
         const dsTasks = allTasks.filter(t => t.dueDate && t.dueDate.startsWith(ds) && !t.completed);
 
         const startOfWeek = new Date(state.calDate);
