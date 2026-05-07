@@ -471,7 +471,7 @@ header p {
    background: var(--surface-color);
    border-radius: 12px;
    padding: 4px;
-   margin-bottom: 16px;
+   margin-bottom: 4px;
    border: 1px solid var(--border-color);
 }
 
@@ -498,7 +498,7 @@ header p {
    background: var(--surface-color);
    border-radius: 16px;
    border: 1px solid var(--border-color);
-   padding: 10px 12px 16px;
+   padding: 10px 10px 16px;
    overflow: visible;
    transition: all 0.3s ease;
 }
@@ -563,6 +563,8 @@ header p {
 .cal-view-day .calendar-day {
    aspect-ratio: auto;
    height: 44px;
+   width: 44px;
+   margin: 0 auto;
    justify-content: center;
    padding-top: 0;
 }
