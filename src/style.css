@@ -398,18 +398,11 @@ header p {
 
 .task-actions .icon-btn {
    background: transparent;
-}
-
-.icon-btn.delete-btn {
-   color: var(--danger-color);
-}
-
-.icon-btn.pomo-btn {
-   color: var(--warning-color);
-}
-
-.icon-btn.bell-btn {
    color: var(--primary-color);
+}
+
+.icon-btn.delete-btn:active {
+   color: var(--danger-color);
 }
 
 .toggle-btn {
