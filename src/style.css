@@ -21,9 +21,31 @@
    -webkit-tap-highlight-color: transparent;
 }
 
-input, textarea, select { -webkit-user-select: auto !important; user-select: auto !important; pointer-events: auto !important; }
-body, html { background: var(--bg-color); color: var(--text-primary); margin: 0; padding: 0; min-height: 100%; height: 100%; height: 100dvh; overscroll-behavior-y: none; }
-body { display: flex; justify-content: center; align-items: flex-start; }
+input,
+textarea,
+select {
+   -webkit-user-select: auto !important;
+   user-select: auto !important;
+   pointer-events: auto !important;
+}
+
+body,
+html {
+   background: var(--bg-color);
+   color: var(--text-primary);
+   margin: 0;
+   padding: 0;
+   min-height: 100%;
+   height: 100%;
+   height: 100dvh;
+   overscroll-behavior-y: none;
+}
+
+body {
+   display: flex;
+   justify-content: center;
+   align-items: flex-start;
+}
 
 .app-container {
    width: 100%;
@@ -476,14 +498,14 @@ header p {
    background: var(--surface-color);
    border-radius: 16px;
    border: 1px solid var(--border-color);
-   padding: 12px;
-   overflow: hidden;
+   padding: 10px 12px 16px;
+   overflow: visible;
    transition: all 0.3s ease;
 }
 
 .cal-view-week #calendar-grid-container,
 .cal-view-day #calendar-grid-container {
-    padding-bottom: 16px;
+   padding-bottom: 16px;
 }
 
 .cal-dow-header {
@@ -539,17 +561,18 @@ header p {
 
 .cal-view-week .calendar-day,
 .cal-view-day .calendar-day {
-    aspect-ratio: auto;
-    height: 54px;
-    justify-content: center;
-    padding-top: 0;
+   aspect-ratio: auto;
+   height: 44px;
+   justify-content: center;
+   padding-top: 0;
 }
 
 .cal-view-week .calendar-day.selected,
 .cal-view-day .calendar-day.selected {
-    background: var(--primary-color);
-    color: white;
-    border-radius: 14px;
+   background: var(--primary-color);
+   color: white;
+   border-radius: 10px;
+   box-shadow: 0 4px 12px rgba(179, 136, 255, 0.4);
 }
 
 .calendar-day.drop-target-active {
@@ -594,55 +617,55 @@ header p {
 
 /* Agenda View */
 .calendar-agenda {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
+   margin-top: 20px;
+   display: flex;
+   flex-direction: column;
+   gap: 24px;
 }
 
 .agenda-day-group {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
 }
 
 .agenda-day-header {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 4px;
+   font-size: 14px;
+   font-weight: 600;
+   color: var(--text-secondary);
+   padding-bottom: 8px;
+   border-bottom: 1px solid var(--border-color);
+   margin-bottom: 4px;
 }
 
 .agenda-empty {
-    text-align: center;
-    color: var(--text-secondary);
-    font-size: 14px;
-    padding: 20px;
-    background: var(--surface-color);
-    border-radius: 16px;
-    border: 1px dashed var(--border-color);
+   text-align: center;
+   color: var(--text-secondary);
+   font-size: 14px;
+   padding: 20px;
+   background: var(--surface-color);
+   border-radius: 16px;
+   border: 1px dashed var(--border-color);
 }
 
 .cal-view-week .cal-dow-header,
 .cal-view-day .cal-dow-header {
-    margin-bottom: 12px;
+   margin-bottom: 12px;
 }
 
 /* Week Selection Highlight */
 .calendar-day.selected {
-    background: var(--primary-color);
-    color: white;
-    box-shadow: 0 4px 12px rgba(179, 136, 255, 0.4);
+   background: var(--primary-color);
+   color: white;
+   box-shadow: 0 4px 12px rgba(179, 136, 255, 0.4);
 }
 
 .calendar-day.selected span {
-    color: white;
+   color: white;
 }
 
 .calendar-day.selected .cal-dot {
-    background: white !important;
+   background: white !important;
 }
 
 /* Bottom Navigation */
@@ -803,7 +826,7 @@ header p {
    width: 85%;
    max-width: 320px;
    z-index: 200;
-   box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
    border: 1px solid var(--border-color);
    opacity: 0;
    pointer-events: none;
@@ -1059,12 +1082,17 @@ input[type="datetime-local"] {
    font-size: 13px;
    color: var(--text-secondary);
    margin-top: 16px;
-}\n
+}
+
+\n
 /* ============================================
    HABITS TRACKER — CSS Grid Spreadsheet
    ============================================ */
 
-#view-habits { gap: 0; padding: 8px 8px 72px; }
+#view-habits {
+   gap: 0;
+   padding: 8px 8px 72px;
+}
 
 .ht-container {
    background: var(--surface-color);
@@ -1073,7 +1101,7 @@ input[type="datetime-local"] {
    overflow: hidden;
    display: flex;
    flex-direction: column;
-   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
 .ht-header-bar {
@@ -1160,7 +1188,10 @@ input[type="datetime-local"] {
    position: relative;
 }
 
-.ht-donut-svg { width: 50px; height: 50px; }
+.ht-donut-svg {
+   width: 50px;
+   height: 50px;
+}
 
 .ht-donut-pct {
    position: absolute;
@@ -1179,8 +1210,14 @@ input[type="datetime-local"] {
    min-height: 0;
 }
 
-.ht-table-wrap::-webkit-scrollbar { height: 4px; }
-.ht-table-wrap::-webkit-scrollbar-thumb { background: var(--surface-light); border-radius: 4px; }
+.ht-table-wrap::-webkit-scrollbar {
+   height: 4px;
+}
+
+.ht-table-wrap::-webkit-scrollbar-thumb {
+   background: var(--surface-light);
+   border-radius: 4px;
+}
 
 .ht-table {
    display: grid;
@@ -1189,7 +1226,7 @@ input[type="datetime-local"] {
    gap: 1px;
 }
 
-.ht-table > div {
+.ht-table>div {
    background: var(--surface-color);
    display: flex;
    align-items: center;
@@ -1210,7 +1247,7 @@ input[type="datetime-local"] {
    left: 0;
    z-index: 10;
    background: var(--surface-color) !important;
-   box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
 }
 
 .ht-wk-label {
@@ -1218,7 +1255,7 @@ input[type="datetime-local"] {
    font-weight: 900;
    letter-spacing: 1px;
    text-transform: uppercase;
-   border-bottom: 1px solid rgba(255,255,255,0.05);
+   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .ht-day-hd {
@@ -1228,9 +1265,14 @@ input[type="datetime-local"] {
    flex-direction: column;
    line-height: 1.2;
 }
-.ht-day-hd span { font-size: 7px; opacity: 0.5; }
 
-.ht-goal-hd, .ht-prog-hd {
+.ht-day-hd span {
+   font-size: 7px;
+   opacity: 0.5;
+}
+
+.ht-goal-hd,
+.ht-prog-hd {
    font-size: 9px;
    font-weight: 900;
    color: var(--text-secondary);
@@ -1246,7 +1288,7 @@ input[type="datetime-local"] {
    left: 0;
    z-index: 9;
    background: var(--surface-color) !important;
-   box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
    cursor: pointer;
 }
 
@@ -1254,26 +1296,76 @@ input[type="datetime-local"] {
    width: 18px;
    height: 18px;
    border-radius: 4px;
-   border: 1.5px solid rgba(255,255,255,0.1);
-   background: rgba(255,255,255,0.02);
+   border: 1.5px solid rgba(255, 255, 255, 0.1);
+   background: rgba(255, 255, 255, 0.02);
    cursor: pointer;
    display: flex;
    align-items: center;
    justify-content: center;
 }
-.ht-ck.on { border-color: transparent; background: var(--primary-color); }
-.ht-ck.on::after { content: ''; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-bottom: 2px; }
-.ht-ck.today-active { border-color: var(--primary-color); border-width: 2px; }
-.ht-ck.future { opacity: 0.15; pointer-events: none; }
 
-.ht-goal-cell, .ht-prog-cell { font-size: 10px; font-weight: 700; color: var(--text-secondary); flex-direction: column; gap: 2px; }
-.ht-prog-cell { color: var(--primary-color); }
+.ht-ck.on {
+   border-color: transparent;
+   background: var(--primary-color);
+}
 
-.wk-1 { background: rgba(179,136,255,0.08) !important; color: #b388ff !important; }
-.wk-2 { background: rgba(105,240,174,0.08) !important; color: #69f0ae !important; }
-.wk-3 { background: rgba(255,183,77,0.08) !important; color: #ffb74d !important; }
-.wk-4 { background: rgba(255,82,82,0.08) !important; color: #ff5252 !important; }
-.wk-5 { background: rgba(100,181,246,0.08) !important; color: #64b5f6 !important; }
+.ht-ck.on::after {
+   content: '';
+   width: 4px;
+   height: 8px;
+   border: solid #fff;
+   border-width: 0 2px 2px 0;
+   transform: rotate(45deg);
+   margin-bottom: 2px;
+}
+
+.ht-ck.today-active {
+   border-color: var(--primary-color);
+   border-width: 2px;
+}
+
+.ht-ck.future {
+   opacity: 0.15;
+   pointer-events: none;
+}
+
+.ht-goal-cell,
+.ht-prog-cell {
+   font-size: 10px;
+   font-weight: 700;
+   color: var(--text-secondary);
+   flex-direction: column;
+   gap: 2px;
+}
+
+.ht-prog-cell {
+   color: var(--primary-color);
+}
+
+.wk-1 {
+   background: rgba(179, 136, 255, 0.08) !important;
+   color: #b388ff !important;
+}
+
+.wk-2 {
+   background: rgba(105, 240, 174, 0.08) !important;
+   color: #69f0ae !important;
+}
+
+.wk-3 {
+   background: rgba(255, 183, 77, 0.08) !important;
+   color: #ffb74d !important;
+}
+
+.wk-4 {
+   background: rgba(255, 82, 82, 0.08) !important;
+   color: #ff5252 !important;
+}
+
+.wk-5 {
+   background: rgba(100, 181, 246, 0.08) !important;
+   color: #64b5f6 !important;
+}
 
 .ht-footer-bar {
    display: flex;
@@ -1281,8 +1373,9 @@ input[type="datetime-local"] {
    gap: 16px;
    border-top: 1px solid var(--border-color);
    padding: 20px 16px;
-   background: rgba(255,255,255,0.01);
+   background: rgba(255, 255, 255, 0.01);
 }
+
 .ht-footer-label {
    font-size: 10px;
    font-weight: 900;
@@ -1291,18 +1384,54 @@ input[type="datetime-local"] {
    text-transform: uppercase;
    text-align: center;
 }
+
 .ht-footer-donuts {
    display: flex;
    justify-content: space-around;
    align-items: center;
    width: 100%;
 }
-.hw-item { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
-.hw-ring-wrap { position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
-.hw-ring-wrap svg { width: 48px; height: 48px; }
-.hw-pct { position: absolute; font-size: 11px; font-weight: 900; color: var(--text-primary); }
-.hw-label { font-size: 9px; font-weight: 800; color: var(--text-secondary); }
-.hw-counts { font-size: 9px; color: var(--text-secondary); opacity: 0.5; }
+
+.hw-item {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   gap: 6px;
+   flex: 1;
+}
+
+.hw-ring-wrap {
+   position: relative;
+   width: 48px;
+   height: 48px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+
+.hw-ring-wrap svg {
+   width: 48px;
+   height: 48px;
+}
+
+.hw-pct {
+   position: absolute;
+   font-size: 11px;
+   font-weight: 900;
+   color: var(--text-primary);
+}
+
+.hw-label {
+   font-size: 9px;
+   font-weight: 800;
+   color: var(--text-secondary);
+}
+
+.hw-counts {
+   font-size: 9px;
+   color: var(--text-secondary);
+   opacity: 0.5;
+}
 
 .ht-add-btn {
    display: flex;
@@ -1312,7 +1441,7 @@ input[type="datetime-local"] {
    padding: 12px;
    background: transparent;
    border: none;
-   border-top: 1px dashed rgba(179,136,255,0.2);
+   border-top: 1px dashed rgba(179, 136, 255, 0.2);
    color: var(--primary-color);
    font-size: 12px;
    font-weight: 700;
@@ -1320,9 +1449,20 @@ input[type="datetime-local"] {
    text-transform: uppercase;
 }
 
-.ht-empty { grid-column: 1 / -1 !important; padding: 40px 20px; text-align: center; color: var(--text-secondary); }
+.ht-empty {
+   grid-column: 1 / -1 !important;
+   padding: 40px 20px;
+   text-align: center;
+   color: var(--text-secondary);
+}
+
 @media (min-width: 768px) {
-   .ht-name-hd, .ht-name-cell { width: 180px; min-width: 180px; }
+
+   .ht-name-hd,
+   .ht-name-cell {
+      width: 180px;
+      min-width: 180px;
+   }
 }
 
 /* Drag and Drop Styles */
@@ -1332,16 +1472,20 @@ input[type="datetime-local"] {
    opacity: 0.5;
    transition: opacity 0.2s;
 }
-.drag-handle:hover, .drag-handle:active {
+
+.drag-handle:hover,
+.drag-handle:active {
    opacity: 1;
 }
+
 .is-dragging {
    z-index: 1000;
-   box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
    background: var(--surface-light) !important;
    opacity: 0.95;
    cursor: grabbing;
 }
+
 .is-dragging .drag-handle {
    cursor: grabbing;
 }

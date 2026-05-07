@@ -89,18 +89,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const AudioSystem = {
         ctx: null,
         buffer: null,
-        init: function() {
+        init: function () {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (!AudioContext) return;
             this.ctx = new AudioContext();
-            
+
             if (typeof SOUND_B64 !== 'undefined') {
                 try {
                     const b64Data = SOUND_B64.split(',')[1];
                     const binary = window.atob(b64Data);
                     const bytes = new Uint8Array(binary.length);
                     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                    
+
                     this.ctx.decodeAudioData(bytes.buffer, (buffer) => {
                         this.buffer = buffer;
                     }, (e) => console.log('Audio decode error', e));
@@ -112,10 +112,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                     document.body.addEventListener('click', unlock);
                     document.body.addEventListener('touchend', unlock);
-                } catch(e) { console.log('Audio init error', e); }
+                } catch (e) { console.log('Audio init error', e); }
             }
         },
-        play: function() {
+        play: function () {
             if (!this.ctx || !this.buffer) return;
             if (this.ctx.state === 'suspended') this.ctx.resume();
             const source = this.ctx.createBufferSource();
@@ -183,50 +183,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let chartInstance = null;
     const openAnalytics = async () => {
-        UI.gamification.modalAnalytics.classList.add('open'); 
+        UI.gamification.modalAnalytics.classList.add('open');
         UI.overlay.classList.add('open');
-        
+
         const tasks = await DB.query('readonly', 'getAll');
         const dataObj = {}; const labels = [];
         const today = new Date(); today.setHours(0, 0, 0, 0);
-        
-        for (let i = 6; i >= 0; i--) { 
-            const d = new Date(today); 
-            d.setDate(d.getDate() - i); 
-            labels.push(d.toLocaleDateString('uk-UA', { weekday: 'short' })); 
-            dataObj[d.toLocaleDateString('en-CA')] = 0; 
+
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            labels.push(d.toLocaleDateString('uk-UA', { weekday: 'short' }));
+            dataObj[d.toLocaleDateString('en-CA')] = 0;
         }
-        
-        tasks.forEach(t => { 
-            if (t.completed && t.completionDate) { 
-                const tDate = new Date(t.completionDate).toLocaleDateString('en-CA'); 
-                if (dataObj[tDate] !== undefined) dataObj[tDate]++; 
-            } 
+
+        tasks.forEach(t => {
+            if (t.completed && t.completionDate) {
+                const tDate = new Date(t.completionDate).toLocaleDateString('en-CA');
+                if (dataObj[tDate] !== undefined) dataObj[tDate]++;
+            }
         });
 
         const ctx = document.getElementById('analytics-chart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
-        
+
         if (typeof Chart !== 'undefined') {
-            chartInstance = new Chart(ctx, { 
-                type: 'bar', 
-                data: { 
-                    labels: labels, 
-                    datasets: [{ 
-                        label: 'Виконано', 
-                        data: Object.values(dataObj), 
-                        backgroundColor: CONFIG.COLORS.PRIMARY, 
-                        borderRadius: 8 
-                    }] 
-                }, 
-                options: { 
-                    responsive: true, 
-                    scales: { 
-                        y: { beginAtZero: true, ticks: { stepSize: 1, color: '#8b8b98' }, grid: { color: '#272730' } }, 
-                        x: { ticks: { color: '#8b8b98' }, grid: { display: false } } 
-                    }, 
-                    plugins: { legend: { display: false } } 
-                } 
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Виконано',
+                        data: Object.values(dataObj),
+                        backgroundColor: CONFIG.COLORS.PRIMARY,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, color: '#8b8b98' }, grid: { color: '#272730' } },
+                        x: { ticks: { color: '#8b8b98' }, grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
             });
         }
     };
@@ -235,31 +235,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     UI.navBtns.forEach(btn => btn.addEventListener('click', (e) => {
         const targetId = e.currentTarget.getAttribute('data-target');
-        UI.navBtns.forEach(b => b.classList.remove('active')); 
+        UI.navBtns.forEach(b => b.classList.remove('active'));
         e.currentTarget.classList.add('active');
-        
+
         UI.views.forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
-        const view = document.getElementById(targetId); 
-        view.style.display = 'flex'; 
+        const view = document.getElementById(targetId);
+        view.style.display = 'flex';
         view.classList.add('active');
-        
+
         state.activeView = targetId;
         UI.fab.style.display = (targetId === CONFIG.VIEWS.SETTINGS || targetId === CONFIG.VIEWS.HABITS) ? 'none' : 'flex';
-        
+
         if (targetId === CONFIG.VIEWS.CALENDAR) renderCalendar();
         if (targetId === CONFIG.VIEWS.HABITS) renderHabits();
         if (targetId === CONFIG.VIEWS.LIST) renderList();
     }));
 
-    if (UI.search) UI.search.addEventListener('input', (e) => { 
-        state.search = e.target.value.toLowerCase().trim(); 
-        renderList(); 
+    if (UI.search) UI.search.addEventListener('input', (e) => {
+        state.search = e.target.value.toLowerCase().trim();
+        renderList();
     });
 
     UI.categoryTabs.forEach(tab => tab.addEventListener('click', (e) => {
-        UI.categoryTabs.forEach(t => t.classList.remove('active')); 
+        UI.categoryTabs.forEach(t => t.classList.remove('active'));
         e.target.classList.add('active');
-        state.category = e.target.getAttribute('data-cat'); 
+        state.category = e.target.getAttribute('data-cat');
         renderList();
     }));
 
@@ -267,25 +267,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const openSheet = (task = null, datePreset = null) => {
         if (task) {
             document.getElementById('sheet-title').textContent = 'Редагувати завдання';
-            UI.inputs.id.value = task.id; UI.inputs.title.value = task.title; 
+            UI.inputs.id.value = task.id; UI.inputs.title.value = task.title;
             UI.inputs.desc.value = task.description || '';
-            UI.inputs.date.value = task.dueDate || ''; 
+            UI.inputs.date.value = task.dueDate || '';
             UI.inputs.category.value = task.categoryId || CONFIG.CATEGORIES.PERSONAL;
-            UI.inputs.priority.value = task.priority || CONFIG.PRIORITIES.MEDIUM; 
+            UI.inputs.priority.value = task.priority || CONFIG.PRIORITIES.MEDIUM;
             UI.inputs.recurrence.value = task.recurrence || CONFIG.RECURRENCE.NONE;
         } else {
             document.getElementById('sheet-title').textContent = 'Нове завдання';
-            UI.form.reset(); UI.inputs.id.value = ''; 
+            UI.form.reset(); UI.inputs.id.value = '';
             UI.inputs.category.value = state.category !== CONFIG.CATEGORIES.ALL ? state.category : CONFIG.CATEGORIES.PERSONAL;
             if (datePreset) { UI.inputs.date.value = datePreset + 'T12:00'; }
         }
-        UI.sheet.classList.add('open'); 
+        UI.sheet.classList.add('open');
         UI.overlay.classList.add('open');
         UI.daily.sheet.classList.remove('open');
     };
 
     UI.fab.addEventListener('click', () => openSheet());
-    
+
     const closeAllModals = () => {
         UI.sheet.classList.remove('open');
         UI.gamification.modalAnalytics?.classList.remove('open');
@@ -313,32 +313,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     UI.form.addEventListener('submit', async (e) => {
-        e.preventDefault(); 
-        const t = UI.inputs.title.value.trim(); 
+        e.preventDefault();
+        const t = UI.inputs.title.value.trim();
         if (!t) return;
-        
-        let existingTask = null; 
+
+        let existingTask = null;
         if (UI.inputs.id.value) {
             existingTask = await DB.query('readonly', 'get', UI.inputs.id.value);
         }
 
         const task = {
             id: UI.inputs.id.value || Date.now().toString(),
-            title: t, 
-            description: UI.inputs.desc.value.trim(), 
+            title: t,
+            description: UI.inputs.desc.value.trim(),
             dueDate: UI.inputs.date.value,
             completed: existingTask ? existingTask.completed : false,
-            categoryId: UI.inputs.category.value, 
+            categoryId: UI.inputs.category.value,
             priority: UI.inputs.priority.value,
             recurrence: UI.inputs.recurrence.value,
-            order: existingTask ? existingTask.order : Date.now(), 
+            order: existingTask ? existingTask.order : Date.now(),
             notified: existingTask ? existingTask.notified : false,
             completionDate: existingTask ? existingTask.completionDate : null
         };
-        
-        await DB.query('readwrite', 'put', task); 
+
+        await DB.query('readwrite', 'put', task);
         closeAllModals();
-        renderList(); 
+        renderList();
         renderCalendar();
     });
 
@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let tasks = await DB.query('readonly', 'getAll');
         const priorityWeight = { [CONFIG.PRIORITIES.HIGH]: 3, [CONFIG.PRIORITIES.MEDIUM]: 2, [CONFIG.PRIORITIES.LOW]: 1 };
-        
+
         tasks.sort((a, b) => {
             const pA = priorityWeight[a.priority] || 2;
             const pB = priorityWeight[b.priority] || 2;
@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const todayStr = new Date().toLocaleDateString('en-CA');
         let todayTotal = 0; let todayDone = 0;
 
-        UI.list.active.innerHTML = ''; 
+        UI.list.active.innerHTML = '';
         if (UI.list.completed) UI.list.completed.innerHTML = '';
 
         const compTasks = [];
@@ -424,10 +424,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const createTaskLi = (task) => {
-        const li = document.createElement('li'); 
-        li.className = `todo-item ${task.completed ? 'completed' : ''}`; 
+        const li = document.createElement('li');
+        li.className = `todo-item ${task.completed ? 'completed' : ''}`;
         li.setAttribute('data-id', task.id);
-        
+
         const isOverdue = !task.completed && task.dueDate && new Date(task.dueDate) < new Date() ? 'overdue' : '';
         const metaHtml = task.dueDate ? `<div class="todo-meta ${isOverdue}">📅 ${Utils.formatDateTime(task.dueDate)}${task.recurrence && task.recurrence !== CONFIG.RECURRENCE.NONE ? ' 🔄' : ''}</div>` : '';
 
@@ -447,39 +447,39 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         li.querySelector('.checkbox').addEventListener('click', async () => {
-            const wasCompleted = task.completed; 
+            const wasCompleted = task.completed;
             task.completed = !task.completed;
-            
+
             if (!wasCompleted) {
                 AudioSystem.play();
                 task.completionDate = Date.now();
-                
+
                 if (task.recurrence && task.recurrence !== CONFIG.RECURRENCE.NONE && !task.cloned) {
                     task.cloned = true;
-                    const clone = { 
-                        ...task, 
-                        id: Utils.generateId(), 
-                        completed: false, 
+                    const clone = {
+                        ...task,
+                        id: Utils.generateId(),
+                        completed: false,
                         cloned: false,
-                        notified: false, 
-                        completionDate: null 
+                        notified: false,
+                        completionDate: null
                     };
                     if (clone.dueDate) {
                         const date = new Date(clone.dueDate);
-                        if (clone.recurrence === CONFIG.RECURRENCE.DAILY) date.setDate(date.getDate() + 1); 
-                        else if (clone.recurrence === CONFIG.RECURRENCE.WEEKLY) date.setDate(date.getDate() + 7); 
+                        if (clone.recurrence === CONFIG.RECURRENCE.DAILY) date.setDate(date.getDate() + 1);
+                        else if (clone.recurrence === CONFIG.RECURRENCE.WEEKLY) date.setDate(date.getDate() + 7);
                         else if (clone.recurrence === CONFIG.RECURRENCE.MONTHLY) date.setMonth(date.getMonth() + 1);
                         clone.dueDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
                     }
                     await DB.query('readwrite', 'put', clone);
                 }
-            } else { 
-                task.completionDate = null; 
+            } else {
+                task.completionDate = null;
                 task.cloned = false;
             }
-            
-            await DB.query('readwrite', 'put', task); 
-            renderList(); 
+
+            await DB.query('readwrite', 'put', task);
+            renderList();
             renderCalendar();
         });
 
@@ -492,18 +492,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.open(url, '_blank');
             });
         }
-        
+
         li.querySelector('.edit-btn').addEventListener('click', () => openSheet(task));
-        
+
         li.querySelector('.delete-btn').addEventListener('click', () => {
             li.classList.add('deleting');
-            setTimeout(async () => { 
-                await DB.query('readwrite', 'delete', task.id); 
-                renderList(); 
-                renderCalendar(); 
+            setTimeout(async () => {
+                await DB.query('readwrite', 'delete', task.id);
+                renderList();
+                renderCalendar();
             }, 300);
         });
-        
+
         li.querySelector('.drag-handle').addEventListener('mousedown', (e) => startDrag(e, li));
         li.querySelector('.drag-handle').addEventListener('touchstart', (e) => startDrag(e, li), { passive: false });
 
@@ -515,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const startDrag = (e, li) => {
         if (li.classList.contains('completed')) return;
         if (e.type === 'touchstart') e.preventDefault();
-        
+
         state.draggingEl = li;
         const rect = li.getBoundingClientRect();
         state.dragStartY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
@@ -525,9 +525,9 @@ document.addEventListener('DOMContentLoaded', () => {
         state.placeholder.className = 'todo-item placeholder';
         state.placeholder.style.height = `${rect.height}px`;
         state.placeholder.style.opacity = '0';
-        
+
         li.parentNode.insertBefore(state.placeholder, li);
-        
+
         li.classList.add('is-dragging');
         li.style.position = 'fixed';
         li.style.width = `${rect.width}px`;
@@ -565,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         state.lastClientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
         state.lastClientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
-        
+
         const deltaY = state.lastClientY - state.dragStartY;
         state.draggingEl.style.top = `${state.dragStartTop + deltaY}px`;
 
@@ -602,9 +602,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const onDragEnd = async () => {
         if (!state.draggingEl) return;
-        
+
         stopAutoScroll();
-        
+
         document.removeEventListener('mousemove', onDragMove);
         document.removeEventListener('touchmove', onDragMove);
         document.removeEventListener('mouseup', onDragEnd);
@@ -619,15 +619,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const listItems = Array.from(UI.list.active.querySelectorAll('li.todo-item'));
         const index = listItems.indexOf(state.draggingEl);
         const taskId = state.draggingEl.getAttribute('data-id');
-        
+
         let newOrder = Date.now();
         const tasks = await DB.query('readonly', 'getAll');
         const taskObj = tasks.find(t => t.id === taskId);
-        
+
         if (taskObj) {
             const prevLi = listItems[index - 1];
             const nextLi = listItems[index + 1];
-            
+
             const prevTask = prevLi ? tasks.find(t => t.id === prevLi.getAttribute('data-id')) : null;
             const nextTask = nextLi ? tasks.find(t => t.id === nextLi.getAttribute('data-id')) : null;
 
@@ -658,7 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         UI.cal.container.classList.remove('cal-view-month', 'cal-view-week', 'cal-view-day');
         UI.cal.container.classList.add(`cal-view-${state.calView}`);
-        
+
         if (state.calView === 'month') await renderMonthView();
         else if (state.calView === 'week') await renderWeekView();
         else if (state.calView === 'day') await renderDayView();
@@ -714,12 +714,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderWeekView = async () => {
         UI.cal.grid.innerHTML = '';
         UI.cal.agenda.innerHTML = '';
-        
+
         const startOfWeek = new Date(state.calDate);
         const day = startOfWeek.getDay();
         const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
         startOfWeek.setDate(diff);
-        
+
         UI.cal.title.textContent = `${startOfWeek.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })} - ${new Date(startOfWeek.getTime() + 6 * 86400000).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
         const allTasks = await DB.query('readonly', 'getAll');
@@ -730,17 +730,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const d = new Date(startOfWeek);
             d.setDate(startOfWeek.getDate() + i);
             const ds = Utils.formatDateISO(d.getFullYear(), d.getMonth(), d.getDate());
-            
+
             const dBtn = document.createElement('div');
             dBtn.className = 'calendar-day'; dBtn.setAttribute('data-date', ds);
             if (ds === todayStr) dBtn.classList.add('today');
             if (ds === Utils.formatDateISO(state.calDate.getFullYear(), state.calDate.getMonth(), state.calDate.getDate())) dBtn.classList.add('selected');
-            
+
             dBtn.innerHTML = `<span>${d.getDate()}</span><div class="cal-dots-area"></div>`;
-            
+
             const dsTasks = allTasks.filter(t => t.dueDate && t.dueDate.startsWith(ds) && !t.completed);
             weekTasks.push({ date: d, tasks: dsTasks });
-            
+
             const dotsArea = dBtn.querySelector('.cal-dots-area');
             dsTasks.slice(0, 4).forEach(t => {
                 const dot = document.createElement('div');
@@ -761,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderDayView = async () => {
         UI.cal.grid.innerHTML = '';
         UI.cal.agenda.innerHTML = '';
-        
+
         const ds = Utils.formatDateISO(state.calDate.getFullYear(), state.calDate.getMonth(), state.calDate.getDate());
         UI.cal.title.textContent = state.calDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -777,13 +777,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const d = new Date(startOfWeek);
             d.setDate(startOfWeek.getDate() + i);
             const dds = Utils.formatDateISO(d.getFullYear(), d.getMonth(), d.getDate());
-            
+
             const dBtn = document.createElement('div');
             dBtn.className = 'calendar-day';
             if (dds === ds) dBtn.classList.add('selected');
             if (dds === Utils.formatDateISO(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())) dBtn.classList.add('today');
-            
-            dBtn.innerHTML = `<span>${d.getDate()}</span>`;
+
+            dBtn.innerHTML = `<span>${d.getDate()}</span><div class="cal-dots-area"></div>`;
+
+            const dayTasks = allTasks.filter(t => t.dueDate && t.dueDate.startsWith(dds) && !t.completed);
+            const dotsArea = dBtn.querySelector('.cal-dots-area');
+            dayTasks.slice(0, 4).forEach(t => {
+                const dot = document.createElement('div');
+                dot.className = `cal-dot prio-${t.priority || CONFIG.PRIORITIES.MEDIUM}`;
+                dotsArea.appendChild(dot);
+            });
+
             dBtn.addEventListener('click', () => {
                 state.calDate = new Date(d);
                 renderCalendar();
@@ -802,15 +811,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         dayGroups.forEach(group => {
             if (group.tasks.length === 0) return;
-            
+
             const groupDiv = document.createElement('div');
             groupDiv.className = 'agenda-day-group';
-            
+
             const header = document.createElement('div');
             header.className = 'agenda-day-header';
             const dateLabel = group.date.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', weekday: 'long' });
             header.textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
-            
+
             groupDiv.appendChild(header);
             group.tasks.forEach(task => groupDiv.appendChild(createTaskLi(task)));
             UI.cal.agenda.appendChild(groupDiv);
@@ -819,11 +828,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const attachDayEvents = (dBtn, ds, dsTasks, y, m, i) => {
         let pressTimer;
-        dBtn.addEventListener('touchstart', () => { 
-            pressTimer = setTimeout(() => { 
-                openSheet(null, ds); 
-                Utils.vibrate(); 
-            }, 600); 
+        dBtn.addEventListener('touchstart', () => {
+            pressTimer = setTimeout(() => {
+                openSheet(null, ds);
+                Utils.vibrate();
+            }, 600);
         }, { passive: true });
         dBtn.addEventListener('touchmove', () => clearTimeout(pressTimer));
         dBtn.addEventListener('touchend', () => clearTimeout(pressTimer));
@@ -870,10 +879,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCalendar();
     }));
 
-    UI.daily.close.addEventListener('click', () => { 
-        UI.daily.sheet.classList.remove('open'); 
-        UI.overlay.classList.remove('open'); 
-        renderCalendar(); 
+    UI.daily.close.addEventListener('click', () => {
+        UI.daily.sheet.classList.remove('open');
+        UI.overlay.classList.remove('open');
+        renderCalendar();
     });
 
     // ================= HABITS =================
@@ -884,7 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const WK_R = 12, WK_C = 2 * Math.PI * WK_R;
 
     const dayKey = d => `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
-    
+
     const renderHabits = async () => {
         if (state.activeView !== CONFIG.VIEWS.HABITS) return;
 
@@ -893,7 +902,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const now = new Date();
         const todayD = now.getFullYear() === y && now.getMonth() === m ? now.getDate() : -1;
         UI.habits.monthTitle.textContent = new Date(y, m).toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
-        
+
         const getWeeks = (y, m) => {
             const daysInMonth = new Date(y, m + 1, 0).getDate();
             const weeks = []; let wk = [];
@@ -908,7 +917,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const habits = (await DB.habits('readonly', 'getAll')) || [];
         const tbl = UI.habits.table;
         tbl.innerHTML = '';
-        
+
         if (!habits.length) {
             tbl.style.gridTemplateColumns = '1fr';
             tbl.innerHTML = '<div class="ht-empty"><div class="ht-empty-icon">📋</div><p>Поки немає звичок.<br>Додайте першу!</p></div>';
@@ -919,10 +928,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         tbl.style.gridTemplateColumns = `130px repeat(${dim}, 1fr) 50px 50px`;
-        
+
         const nameH = document.createElement('div'); nameH.className = 'ht-name-hd'; nameH.textContent = 'ЩОДЕННІ ЗВИЧКИ';
         nameH.style.gridColumn = '1'; nameH.style.gridRow = '1 / 3'; tbl.appendChild(nameH);
-        
+
         let colIdx = 2;
         const weekColRanges = [];
         weeks.forEach((wk, wi) => {
@@ -955,12 +964,12 @@ document.addEventListener('DOMContentLoaded', () => {
             nc.innerHTML = `<span class="ht-emoji">${h.emoji || '📌'}</span><span class="ht-title">${Utils.escapeHTML(h.title)}</span>`;
             nc.addEventListener('click', () => openHabitSheet(h));
             nc.style.gridColumn = '1'; nc.style.gridRow = `${rowNum}`; tbl.appendChild(nc);
-            
+
             let done = 0, possible = 0;
             for (let d = 1; d <= dim; d++) {
                 const dk = dayKey(new Date(y, m, d)); const on = h.days && h.days[dk];
                 const cell = document.createElement('div'); cell.className = 'ht-ck-cell';
-                const ck = document.createElement('div'); 
+                const ck = document.createElement('div');
                 let cls = 'ht-ck'; if (on) cls += ' on';
                 if (d === todayD) cls += ' today-active'; else if (d < todayD || todayD === -1) cls += ' past'; else cls += ' future';
                 ck.className = cls; if (d === todayD) ck.addEventListener('click', () => toggleHabitDay(h.id, dk));
@@ -989,12 +998,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (UI.habits.linePath) UI.habits.linePath.setAttribute('points', pts.join(' '));
         if (UI.habits.lineFill) UI.habits.lineFill.setAttribute('points', `${pad},${svgH} ${pts.join(' ')} ${(svgW - pad).toFixed(1)},${svgH}`);
-        
+
         let totalD = 0, totalP = 0; weekStats.forEach(ws => { totalD += ws.done; totalP += ws.total; });
         const overallPct = totalP > 0 ? Math.round(totalD / totalP * 100) : 0;
         if (UI.habits.donutPct) UI.habits.donutPct.textContent = overallPct + '%';
         if (UI.habits.donutRing) UI.habits.donutRing.style.strokeDashoffset = DONUT_C - (overallPct / 100) * DONUT_C;
-        
+
         UI.habits.weeklyDonuts.innerHTML = '';
         weeks.forEach((wk, wi) => {
             const ws = weekStats[wi]; const wpct = ws.total > 0 ? Math.round(ws.done / ws.total * 100) : 0;
@@ -1006,10 +1015,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const toggleHabitDay = async (id, dk) => {
-        const h = await DB.habits('readonly', 'get', id); 
+        const h = await DB.habits('readonly', 'get', id);
         if (!h) return;
         if (!h.days) h.days = {}; h.days[dk] = !h.days[dk];
-        await DB.habits('readwrite', 'put', h); 
+        await DB.habits('readwrite', 'put', h);
         renderHabits();
     };
 
@@ -1029,25 +1038,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (UI.habits.addBtn) UI.habits.addBtn.addEventListener('click', () => openHabitSheet());
     if (UI.habits.closeSheet) UI.habits.closeSheet.addEventListener('click', closeAllModals);
-    
+
     if (UI.habits.form) UI.habits.form.addEventListener('submit', async (e) => {
-        e.preventDefault(); 
+        e.preventDefault();
         const title = UI.habits.inputTitle.value.trim(); if (!title) return;
         const id = UI.habits.inputId.value;
         let existing = null; if (id) existing = await DB.habits('readonly', 'get', id);
         const habit = { id: id || Date.now().toString(), title, emoji: UI.habits.inputEmoji.value.trim() || '📌', days: existing ? existing.days : {}, createdAt: existing ? existing.createdAt : Date.now() };
-        await DB.habits('readwrite', 'put', habit); 
-        closeAllModals(); 
+        await DB.habits('readwrite', 'put', habit);
+        closeAllModals();
         renderHabits();
     });
 
     if (UI.habits.deleteBtn) {
         UI.habits.deleteBtn.addEventListener('click', () => {
-            const id = UI.habits.inputId.value; 
+            const id = UI.habits.inputId.value;
             if (!id) return;
             showConfirm('Видалити звичку?', 'Всі дані про виконання цієї звички будуть видалені назавжди.', async () => {
-                await DB.habits('readwrite', 'delete', id); 
-                closeAllModals(); 
+                await DB.habits('readwrite', 'delete', id);
+                closeAllModals();
                 renderHabits();
             });
         });
@@ -1057,8 +1066,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (UI.habits.next) UI.habits.next.addEventListener('click', () => { state.habitsDate.setMonth(state.habitsDate.getMonth() + 1); renderHabits(); });
 
     // BOOTSTRAP
-    DB.init().then(() => { 
-        renderList(); 
-        renderCalendar(); 
+    DB.init().then(() => {
+        renderList();
+        renderCalendar();
     });
 });
