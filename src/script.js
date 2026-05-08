@@ -83,6 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
             text: document.getElementById('confirm-text'),
             no: document.getElementById('confirm-no'),
             yes: document.getElementById('confirm-yes')
+        },
+        settings: {
+            themeToggle: document.getElementById('theme-toggle')
         }
     };
 
@@ -127,6 +130,31 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     AudioSystem.init();
+
+    // Theme System
+    const initTheme = () => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-theme');
+            if (UI.settings.themeToggle) UI.settings.themeToggle.checked = false;
+        } else {
+            document.body.classList.remove('light-theme');
+            if (UI.settings.themeToggle) UI.settings.themeToggle.checked = true;
+        }
+    };
+
+    if (UI.settings.themeToggle) {
+        UI.settings.themeToggle.addEventListener('change', () => {
+            if (UI.settings.themeToggle.checked) {
+                document.body.classList.remove('light-theme');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.add('light-theme');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    }
+    initTheme();
 
     // Application State
     const state = {
