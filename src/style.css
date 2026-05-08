@@ -11,6 +11,9 @@
    --danger-color: #ff5252;
    --warning-color: #ffb74d;
    --success-color: #69f0ae;
+   --header-gradient: linear-gradient(135deg, #fff, #b388ff);
+   --accent-gradient: linear-gradient(90deg, #b388ff, #d0b0ff);
+   --progress-bg: rgba(255, 255, 255, 0.05);
    transition: background-color 0.3s, color 0.3s;
 }
 
@@ -22,6 +25,9 @@ body.light-theme {
    --text-secondary: #86868b;
    --border-color: #e5e5e7;
    --primary-color: #7c4dff; /* Slightly deeper purple for light mode */
+   --header-gradient: linear-gradient(135deg, #1d1d1f, #7c4dff);
+   --accent-gradient: linear-gradient(90deg, #7c4dff, #b388ff);
+   --progress-bg: rgba(0, 0, 0, 0.05);
 }
 
 * {
@@ -84,7 +90,7 @@ header {
 header h1 {
    font-size: 26px;
    font-weight: 700;
-   background: linear-gradient(135deg, #fff, #b388ff);
+   background: var(--header-gradient);
    -webkit-background-clip: text;
    -webkit-text-fill-color: transparent;
    margin-bottom: 2px;
