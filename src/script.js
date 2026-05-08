@@ -4,6 +4,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // UI References
     const UI = {
+        mainTitle: document.getElementById('main-title'),
         views: document.querySelectorAll('.tab-view'),
         navBtns: document.querySelectorAll('.nav-btn'),
         list: {
@@ -242,6 +243,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const view = document.getElementById(targetId);
         view.style.display = 'flex';
         view.classList.add('active');
+
+        const titles = {
+            [CONFIG.VIEWS.LIST]: 'Завдання',
+            [CONFIG.VIEWS.CALENDAR]: 'Календар',
+            [CONFIG.VIEWS.HABITS]: 'Звички',
+            [CONFIG.VIEWS.SETTINGS]: 'Налаштування'
+        };
+        if (UI.mainTitle) UI.mainTitle.textContent = titles[targetId] || 'Завдання';
 
         state.activeView = targetId;
         UI.fab.style.display = (targetId === CONFIG.VIEWS.SETTINGS || targetId === CONFIG.VIEWS.HABITS) ? 'none' : 'flex';
