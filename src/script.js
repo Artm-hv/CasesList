@@ -805,9 +805,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 dotsArea.appendChild(dot);
             });
 
-            dBtn.addEventListener('click', () => {
+            dBtn.addEventListener('click', async () => {
                 state.calDate = new Date(d);
-                renderCalendar();
+                await renderCalendar();
+                const target = document.getElementById(`agenda-day-${ds}`);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             });
             UI.cal.grid.appendChild(dBtn);
         }
@@ -852,9 +856,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 dotsArea.appendChild(dot);
             });
 
-            dBtn.addEventListener('click', () => {
+            dBtn.addEventListener('click', async () => {
                 state.calDate = new Date(d);
-                renderCalendar();
+                await renderCalendar();
+                const target = document.getElementById(`agenda-day-${dds}`);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             });
             UI.cal.grid.appendChild(dBtn);
         }
@@ -873,6 +881,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const groupDiv = document.createElement('div');
             groupDiv.className = 'agenda-day-group';
+            const ds = Utils.formatDateISO(group.date.getFullYear(), group.date.getMonth(), group.date.getDate());
+            groupDiv.id = `agenda-day-${ds}`;
 
             const header = document.createElement('div');
             header.className = 'agenda-day-header';
