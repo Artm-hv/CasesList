@@ -308,6 +308,9 @@ header p {
    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
    position: relative;
    transition: 0.2s;
+   user-select: none;
+   -webkit-user-select: none;
+   -webkit-touch-callout: none;
 }
 
 .todo-item:active {
