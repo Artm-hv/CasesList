@@ -429,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
         li.setAttribute('data-id', task.id);
 
         const isOverdue = !task.completed && task.dueDate && new Date(task.dueDate) < new Date() ? 'overdue' : '';
-        const metaHtml = task.dueDate ? `<div class="todo-meta ${isOverdue}">📅 ${Utils.formatDateTime(task.dueDate)}${task.recurrence && task.recurrence !== CONFIG.RECURRENCE.NONE ? ' 🔄' : ''}</div>` : '';
+        const metaHtml = task.dueDate ? `<div class="todo-meta ${isOverdue}">🗓️ ${Utils.formatDateTime(task.dueDate)}${task.recurrence && task.recurrence !== CONFIG.RECURRENCE.NONE ? ' 🔄' : ''}</div>` : '';
 
         li.innerHTML = `
             <div class="checkbox"></div>
