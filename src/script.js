@@ -45,6 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
             agenda: document.getElementById('calendar-agenda'),
             container: document.getElementById('view-calendar')
         },
+        subtasks: {
+            list: document.getElementById('subtasks-list'),
+            input: document.getElementById('new-subtask-input'),
+            addBtn: document.getElementById('add-subtask-btn')
+        },
         daily: {
             sheet: document.getElementById('daily-tasks-sheet'),
             list: document.getElementById('daily-tasks-list'),
@@ -170,7 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
         dragStartTop: 0,
         autoScrollInterval: null,
         lastClientX: 0,
-        lastClientY: 0
+        lastClientY: 0,
+        modalSubtasks: []
     };
 
     // ================= HELPER FUNCTIONS =================
@@ -310,16 +316,57 @@ document.addEventListener('DOMContentLoaded', () => {
             UI.inputs.category.value = task.categoryId || CONFIG.CATEGORIES.PERSONAL;
             UI.inputs.priority.value = task.priority || CONFIG.PRIORITIES.MEDIUM;
             UI.inputs.recurrence.value = task.recurrence || CONFIG.RECURRENCE.NONE;
+            state.modalSubtasks = task.subtasks ? [...task.subtasks] : [];
         } else {
             document.getElementById('sheet-title').textContent = 'Нове завдання';
             UI.form.reset(); UI.inputs.id.value = '';
             UI.inputs.category.value = state.category !== CONFIG.CATEGORIES.ALL ? state.category : CONFIG.CATEGORIES.PERSONAL;
             if (datePreset) { UI.inputs.date.value = datePreset + 'T12:00'; }
+            state.modalSubtasks = [];
         }
+        renderModalSubtasks();
         UI.sheet.classList.add('open');
         UI.overlay.classList.add('open');
         UI.daily.sheet.classList.remove('open');
     };
+
+    const renderModalSubtasks = () => {
+        UI.subtasks.list.innerHTML = '';
+        state.modalSubtasks.forEach((sub, index) => {
+            const li = document.createElement('li');
+            li.className = `modal-subtask-item ${sub.completed ? 'completed' : ''}`;
+            li.innerHTML = `
+                <div class="sub-check"></div>
+                <span>${Utils.escapeHTML(sub.title)}</span>
+                <button type="button" class="remove-sub-btn">✖</button>
+            `;
+            li.querySelector('.sub-check').onclick = () => {
+                sub.completed = !sub.completed;
+                renderModalSubtasks();
+            };
+            li.querySelector('.remove-sub-btn').onclick = () => {
+                state.modalSubtasks.splice(index, 1);
+                renderModalSubtasks();
+            };
+            UI.subtasks.list.appendChild(li);
+        });
+    };
+
+    const addSubtaskFromModal = () => {
+        const val = UI.subtasks.input.value.trim();
+        if (!val) return;
+        state.modalSubtasks.push({ id: Date.now().toString(), title: val, completed: false });
+        UI.subtasks.input.value = '';
+        renderModalSubtasks();
+    };
+
+    UI.subtasks.addBtn.addEventListener('click', addSubtaskFromModal);
+    UI.subtasks.input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addSubtaskFromModal();
+        }
+    });
 
     UI.fab.addEventListener('click', () => openSheet());
 
@@ -368,6 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
             categoryId: UI.inputs.category.value,
             priority: UI.inputs.priority.value,
             recurrence: UI.inputs.recurrence.value,
+            subtasks: state.modalSubtasks,
             order: existingTask ? existingTask.order : Date.now(),
             notified: existingTask ? existingTask.notified : false,
             completionDate: existingTask ? existingTask.completionDate : null
@@ -380,6 +428,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ================= RENDERING LOGIC =================
+
+    const renderSubtasksInline = (task) => {
+        if (!task.subtasks || task.subtasks.length === 0) return '';
+        
+        const total = task.subtasks.length;
+        
+        let html = '';
+        
+        if (total > 0) {
+            html += `<ul class="subtasks-inline-list">`;
+            task.subtasks.forEach((sub, index) => {
+                html += `
+                    <li class="${sub.completed ? 'completed' : ''}" data-index="${index}">
+                        <div class="sub-check-mini"></div>
+                        <span>${Utils.escapeHTML(sub.title)}</span>
+                    </li>
+                `;
+            });
+            html += `</ul>`;
+        }
+        return html;
+    };
 
     const renderList = async () => {
         if (state.activeView !== CONFIG.VIEWS.LIST && state.activeView !== CONFIG.VIEWS.SETTINGS) return;
@@ -472,8 +542,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="checkbox"></div>
             <div class="task-content">
                 <span class="todo-title"><div class="priority-dot prio-${task.priority || CONFIG.PRIORITIES.MEDIUM}"></div>${Utils.escapeHTML(task.title)}</span>
-                ${task.description ? `<p class="todo-desc">${Utils.escapeHTML(task.description)}</p>` : ''}
                 ${metaHtml}
+                ${task.description ? `<p class="todo-desc">${Utils.escapeHTML(task.description)}</p>` : ''}
+                ${renderSubtasksInline(task)}
             </div>
             <div class="task-actions">
                 ${!task.completed && task.dueDate ? `<button class="icon-btn bell-btn" aria-label="Google Calendar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>` : ''}
@@ -490,6 +561,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 AudioSystem.play();
                 task.completionDate = Date.now();
 
+                // Also mark all subtasks as completed if main task is completed? 
+                // Usually yes, but maybe not. Let's stick to just the main task.
+                
                 if (task.recurrence && task.recurrence !== CONFIG.RECURRENCE.NONE && !task.cloned) {
                     task.cloned = true;
                     const clone = {
@@ -517,6 +591,20 @@ document.addEventListener('DOMContentLoaded', () => {
             await DB.query('readwrite', 'put', task);
             renderList();
             renderCalendar();
+        });
+
+        // Subtasks inline toggle
+        li.querySelectorAll('.subtasks-inline-list li').forEach(subLi => {
+            subLi.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const index = parseInt(subLi.getAttribute('data-index'));
+                task.subtasks[index].completed = !task.subtasks[index].completed;
+                
+                // If all subtasks are completed, should we complete the main task? 
+                // Maybe not automatically, but let's update DB and re-render.
+                await DB.query('readwrite', 'put', task);
+                renderList();
+            });
         });
 
         if (!task.completed && task.dueDate) {

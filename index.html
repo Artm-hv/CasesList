@@ -287,6 +287,10 @@
                     <label>Назва</label>
                     <input type="text" id="task-title" required placeholder="Що плануєте зробити?" autocomplete="off">
                 </div>
+                <div class="form-group">
+                    <label>Опис</label>
+                    <textarea id="task-desc" rows="2" placeholder="Додайте деталі..."></textarea>
+                </div>
                 <div class="form-row">
                     <div class="form-group half">
                         <label>Категорія</label>
@@ -321,8 +325,18 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Опис</label>
-                    <textarea id="task-desc" rows="2" placeholder="Додайте деталі..."></textarea>
+                    <label>Підпункти</label>
+                    <div class="subtasks-container">
+                        <ul id="subtasks-list" class="modal-subtask-list"></ul>
+                        <div class="add-subtask-row">
+                            <input type="text" id="new-subtask-input" placeholder="Додати підпункт..." autocomplete="off">
+                            <button type="button" id="add-subtask-btn" class="icon-btn">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5V19M5 12H19" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <button type="submit" class="primary-btn">Зберегти завдання</button>
             </form>

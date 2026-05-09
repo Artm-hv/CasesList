@@ -18,7 +18,22 @@ const Utils = {
      */
     formatDateTime: (dateStr) => {
         if (!dateStr) return '';
-        return new Date(dateStr).toLocaleString('uk-UA', {
+        const d = new Date(dateStr);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const taskDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+        const time = d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+        
+        if (taskDate.getTime() === today.getTime()) {
+            return `Сьогодні, ${time}`;
+        } else if (taskDate.getTime() === tomorrow.getTime()) {
+            return `Завтра, ${time}`;
+        }
+
+        return d.toLocaleString('uk-UA', {
             month: 'short',
             day: 'numeric',
             hour: '2-digit',

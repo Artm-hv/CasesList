@@ -424,12 +424,18 @@ header p {
 }
 
 .todo-meta {
-   font-size: 12px;
-   color: var(--primary-color);
+   font-size: 11.5px;
+   color: var(--text-secondary);
    display: flex;
    align-items: center;
    gap: 4px;
-   margin-top: 2px;
+   margin-top: 1px;
+   margin-bottom: 2px;
+   font-weight: 500;
+}
+
+.todo-meta.overdue {
+   color: var(--danger-color);
 }
 
 .task-actions {
@@ -1647,4 +1653,185 @@ input:checked + .slider:before {
 
 .is-dragging .drag-handle {
    cursor: grabbing;
+}
+
+/* --- SUBTASKS IMPROVED UI --- */
+.subtasks-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.modal-subtask-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.modal-subtask-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.modal-subtask-list::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.modal-subtask-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface-light);
+    padding: 10px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-subtask-item.completed {
+    opacity: 0.6;
+    border-color: transparent;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.sub-check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--primary-color);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: 0.2s;
+}
+
+.modal-subtask-item.completed .sub-check {
+    background: var(--primary-color);
+    box-shadow: 0 0 8px rgba(179, 136, 255, 0.3);
+}
+
+.modal-subtask-item.completed .sub-check::after {
+    content: ' ';
+    width: 5px;
+    height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+}
+
+.modal-subtask-item span {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: 0.3s;
+}
+
+.modal-subtask-item.completed span {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+}
+
+.remove-sub-btn {
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    transition: 0.2s;
+}
+
+.remove-sub-btn:hover {
+    color: var(--danger-color);
+    opacity: 1;
+}
+
+.add-subtask-row {
+    display: flex;
+    gap: 10px;
+}
+
+.add-subtask-row input {
+    flex: 1;
+    background: var(--surface-light) !important;
+}
+
+.add-subtask-row .icon-btn {
+    width: 48px;
+    height: 48px;
+    background: var(--primary-color) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 14px !important;
+}
+
+/* Inline Subtasks in Task List */
+.subtasks-inline-list {
+    list-style: none;
+    margin-top: 10px;
+    margin-left: 4px;
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.subtasks-inline-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: 0.2s;
+    padding: 2px 0;
+}
+
+.subtasks-inline-list li.completed {
+    opacity: 0.5;
+}
+
+.subtasks-inline-list li.completed span {
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+    color: var(--text-secondary);
+}
+
+.sub-check-mini {
+    width: 17px;
+    height: 17px;
+    border: 1.8px solid var(--primary-color);
+    border-radius: 5px;
+    flex-shrink: 0;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.subtasks-inline-list li.completed .sub-check-mini {
+    background: var(--primary-color);
+    box-shadow: 0 0 6px rgba(179, 136, 255, 0.2);
+}
+
+.subtasks-inline-list li.completed .sub-check-mini::after {
+    content: ' ';
+    width: 4px;
+    height: 7.5px;
+    border: solid white;
+    border-width: 0 1.8px 1.8px 0;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+}
 }
