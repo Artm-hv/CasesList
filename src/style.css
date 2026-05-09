@@ -1833,5 +1833,4 @@ input:checked + .slider:before {
     border-width: 0 1.8px 1.8px 0;
     transform: rotate(45deg);
     margin-bottom: 2px;
-}
-}
+}
