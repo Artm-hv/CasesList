@@ -110,9 +110,9 @@
             <div style="height: 48px;"></div>
         </main>
 
-        
-        
-        
+
+
+
         <!-- View 3: Habits Tracker -->
         <main class="content tab-view" id="view-habits" style="display: none;">
             <div class="ht-container">
@@ -121,25 +121,36 @@
                         <div class="ht-brand">ТРЕКЕР ЗВИЧОК</div>
                         <div class="ht-nav-row">
                             <button class="icon-btn-sm" id="habits-prev-month">
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                                    stroke-width="3">
+                                    <path d="M15 18l-6-6 6-6" />
+                                </svg>
                             </button>
                             <span class="ht-month-txt" id="habits-month-title">Травень 2026</span>
                             <button class="icon-btn-sm" id="habits-next-month">
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6"/></svg>
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                                    stroke-width="3">
+                                    <path d="M9 18l6-6-6-6" />
+                                </svg>
                             </button>
                         </div>
                     </div>
                     <div class="ht-header-chart">
                         <div class="ht-chart-lbl">ЩОДЕННИЙ ПРОГРЕС</div>
                         <svg class="ht-line-svg" viewBox="0 0 400 50" preserveAspectRatio="none">
-                            <polygon id="habits-line-fill" points="" fill="rgba(179,136,255,0.15)"/>
-                            <polyline id="habits-line-path" points="" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polygon id="habits-line-fill" points="" fill="rgba(179,136,255,0.15)" />
+                            <polyline id="habits-line-path" points="" fill="none" stroke="var(--primary-color)"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                     </div>
                     <div class="ht-header-donut">
                         <svg class="ht-donut-svg" viewBox="0 0 36 36">
-                            <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
-                            <circle id="habits-donut-ring" cx="18" cy="18" r="15" fill="none" stroke="var(--primary-color)" stroke-width="4" stroke-dasharray="94.2 94.2" stroke-dashoffset="94.2" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition: stroke-dashoffset 0.8s ease-out;" />
+                            <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.05)"
+                                stroke-width="4" />
+                            <circle id="habits-donut-ring" cx="18" cy="18" r="15" fill="none"
+                                stroke="var(--primary-color)" stroke-width="4" stroke-dasharray="94.2 94.2"
+                                stroke-dashoffset="94.2" stroke-linecap="round" transform="rotate(-90 18 18)"
+                                style="transition: stroke-dashoffset 0.8s ease-out;" />
                         </svg>
                         <div class="ht-donut-pct" id="habits-donut-pct">0%</div>
                     </div>
@@ -152,7 +163,9 @@
                     <div class="ht-footer-donuts" id="habits-weekly-donuts"></div>
                 </div>
                 <button id="btn-add-habit" class="ht-add-btn">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5V19M5 12H19"/></svg>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5V19M5 12H19" />
+                    </svg>
                     Додати звичку
                 </button>
             </div>
@@ -169,16 +182,19 @@
                         <button class="settings-item" id="btn-open-history">
                             <div class="settings-item-left">
                                 <div class="settings-icon purple">
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2">
                                         <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
                                 <div class="settings-item-info">
                                     <div class="settings-item-title">Архів завдань</div>
-                                    <div class="settings-item-desc">Виконано: <span id="settings-completed-count">0</span></div>
+                                    <div class="settings-item-desc">Виконано: <span
+                                            id="settings-completed-count">0</span></div>
                                 </div>
                             </div>
-                            <svg class="settings-chevron" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg class="settings-chevron" viewBox="0 0 24 24" width="20" height="20" fill="none"
+                                stroke="currentColor" stroke-width="2">
                                 <path d="M9 18l6-6-6-6" />
                             </svg>
                         </button>
@@ -192,8 +208,10 @@
                         <div class="settings-item">
                             <div class="settings-item-left">
                                 <div class="settings-icon orange">
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path
+                                            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
                                         <circle cx="12" cy="12" r="5" />
                                     </svg>
                                 </div>
@@ -217,7 +235,8 @@
                         <div class="settings-item">
                             <div class="settings-item-left">
                                 <div class="settings-icon blue">
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2">
                                         <circle cx="12" cy="12" r="10" />
                                         <line x1="12" y1="16" x2="12" y2="12" />
                                         <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -329,9 +348,11 @@
                     <div class="subtasks-container">
                         <ul id="subtasks-list" class="modal-subtask-list"></ul>
                         <div class="add-subtask-row">
-                            <input type="text" id="new-subtask-input" placeholder="Додати підпункт..." autocomplete="off">
+                            <input type="text" id="new-subtask-input" placeholder="Впишіть підпункт..."
+                                autocomplete="off">
                             <button type="button" id="add-subtask-btn" class="icon-btn">
-                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                    stroke-width="2">
                                     <path d="M12 5V19M5 12H19" />
                                 </svg>
                             </button>

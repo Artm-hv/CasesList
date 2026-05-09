@@ -1744,17 +1744,23 @@ input:checked + .slider:before {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 6px;
+    padding: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.5;
+    opacity: 0.6;
     transition: 0.2s;
+    font-size: 16px;
+}
+
+.modal-subtask-item.completed .remove-sub-btn {
+    opacity: 0.9;
 }
 
 .remove-sub-btn:hover {
     color: var(--danger-color);
     opacity: 1;
+    transform: scale(1.1);
 }
 
 .add-subtask-row {
