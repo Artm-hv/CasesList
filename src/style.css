@@ -160,6 +160,15 @@ header p {
    height: 20px;
 }
 
+#btn-analytics svg {
+   width: 24px;
+   height: 24px;
+}
+
+#btn-analytics {
+   padding: 6px; /* Slightly less padding to fit the larger icon in the same space, or keep 8px for larger button */
+}
+
 .primary-btn {
    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
    color: white;
