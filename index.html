@@ -117,7 +117,8 @@
 
         <!-- View 3: Habits Tracker -->
         <main class="content tab-view" id="view-habits" style="display: none;">
-            <div class="ht-container">
+            <!-- Module 1: Header & Stats Card -->
+            <div class="ht-card ht-header-card">
                 <div class="ht-header-bar">
                     <div class="ht-header-left">
                         <div class="ht-brand">ТРЕКЕР ЗВИЧОК</div>
@@ -157,12 +158,12 @@
                         <div class="ht-donut-pct" id="habits-donut-pct">0%</div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Module 2: Habits Table Card -->
+            <div class="ht-card ht-table-card">
                 <div class="ht-table-wrap">
                     <div class="ht-table" id="habits-table"></div>
-                </div>
-                <div class="ht-footer-bar">
-                    <div class="ht-footer-label">ТИЖНЕВИЙ ПРОГРЕС</div>
-                    <div class="ht-footer-donuts" id="habits-weekly-donuts"></div>
                 </div>
                 <button id="btn-add-habit" class="ht-add-btn">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -171,6 +172,13 @@
                     Додати звичку
                 </button>
             </div>
+
+            <!-- Module 3: Weekly Progress Card -->
+            <div class="ht-card ht-weekly-card">
+                <div class="ht-footer-label">ТИЖНЕВИЙ ПРОГРЕС</div>
+                <div class="ht-footer-donuts" id="habits-weekly-donuts"></div>
+            </div>
+            
             <div style="height:56px"></div>
         </main>
 

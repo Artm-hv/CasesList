@@ -1135,25 +1135,29 @@ input[type="datetime-local"] {
    ============================================ */
 
 #view-habits {
-   gap: 0;
-   padding: 8px 8px 72px;
-}
-
-.ht-container {
-   background: var(--surface-color);
-   border-radius: 12px;
-   border: 1px solid var(--border-color);
-   overflow: hidden;
    display: flex;
    flex-direction: column;
-   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+   gap: 20px;
+   padding: 16px 16px 80px;
+}
+
+.ht-card {
+   background: var(--surface-color);
+   border-radius: 24px;
+   border: 1px solid var(--border-color);
+   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+   overflow: hidden;
+   transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.ht-card:hover {
+   box-shadow: 0 15px 45px rgba(0, 0, 0, 0.45);
 }
 
 .ht-header-bar {
    display: grid;
    grid-template-columns: 150px 1fr 80px;
    gap: 0;
-   border-bottom: 1px solid var(--border-color);
    min-height: 70px;
 }
 
@@ -1416,13 +1420,12 @@ input[type="datetime-local"] {
    color: #64b5f6 !important;
 }
 
-.ht-footer-bar {
+.ht-weekly-card {
    display: flex;
    flex-direction: column;
    gap: 16px;
-   border-top: 1px solid var(--border-color);
    padding: 20px 16px;
-   background: rgba(255, 255, 255, 0.01);
+   background: var(--surface-color);
 }
 
 .ht-footer-label {
@@ -1486,16 +1489,22 @@ input[type="datetime-local"] {
    display: flex;
    align-items: center;
    justify-content: center;
-   gap: 6px;
-   padding: 12px;
-   background: transparent;
+   gap: 8px;
+   padding: 16px;
+   background: rgba(179, 136, 255, 0.03);
    border: none;
-   border-top: 1px dashed rgba(179, 136, 255, 0.2);
+   border-top: 1px solid var(--border-color);
    color: var(--primary-color);
-   font-size: 12px;
+   font-size: 13px;
    font-weight: 700;
    cursor: pointer;
    text-transform: uppercase;
+   transition: background 0.2s, color 0.2s;
+}
+
+.ht-add-btn:hover, .ht-add-btn:active {
+   background: rgba(179, 136, 255, 0.08);
+   color: #c49eff;
 }
 
 .ht-empty {
