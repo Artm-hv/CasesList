@@ -1256,7 +1256,7 @@ input[type="datetime-local"] {
 }
 
 .ht-table-wrap::-webkit-scrollbar {
-   height: 4px;
+   height: 8px;
 }
 
 .ht-table-wrap::-webkit-scrollbar-thumb {
@@ -1266,7 +1266,7 @@ input[type="datetime-local"] {
 
 .ht-table {
    display: grid;
-   min-width: 900px;
+   min-width: 1050px;
    background: var(--border-color);
    gap: 1px;
 }
@@ -1301,6 +1301,10 @@ input[type="datetime-local"] {
    letter-spacing: 1px;
    text-transform: uppercase;
    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+   min-width: 0;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
 }
 
 .ht-day-hd {
@@ -1408,7 +1412,7 @@ input[type="datetime-local"] {
 }
 
 .wk-5 {
-   background: rgba(100, 181, 246, 0.08) !important;
+   background: rgba(100, 181, 246, 0.15) !important;
    color: #64b5f6 !important;
 }
 

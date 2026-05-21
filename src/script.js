@@ -290,7 +290,14 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.fab.style.display = (targetId === CONFIG.VIEWS.SETTINGS || targetId === CONFIG.VIEWS.HABITS) ? 'none' : 'flex';
 
         if (targetId === CONFIG.VIEWS.CALENDAR) renderCalendar();
-        if (targetId === CONFIG.VIEWS.HABITS) renderHabits();
+        if (targetId === CONFIG.VIEWS.HABITS) {
+            const wrap = document.querySelector('.ht-table-wrap');
+            if (wrap) wrap.scrollLeft = 0;
+            renderHabits();
+            setTimeout(() => {
+                if (wrap) wrap.scrollLeft = 0;
+            }, 20);
+        }
         if (targetId === CONFIG.VIEWS.LIST) renderList();
     }));
 
@@ -1062,11 +1069,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const getWeeks = (y, m) => {
             const daysInMonth = new Date(y, m + 1, 0).getDate();
-            const weeks = []; let wk = [];
-            for (let d = 1; d <= daysInMonth; d++) {
-                wk.push(d);
-                const dow = new Date(y, m, d).getDay() || 7;
-                if (dow === 7 || d === daysInMonth) { weeks.push(wk); wk = []; }
+            const weeks = [];
+            for (let start = 1; start <= daysInMonth; start += 7) {
+                const end = Math.min(start + 6, daysInMonth);
+                const wk = [];
+                for (let d = start; d <= end; d++) wk.push(d);
+                weeks.push(wk);
             }
             return weeks;
         };
@@ -1219,8 +1227,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (UI.habits.prev) UI.habits.prev.addEventListener('click', () => { state.habitsDate.setMonth(state.habitsDate.getMonth() - 1); renderHabits(); });
-    if (UI.habits.next) UI.habits.next.addEventListener('click', () => { state.habitsDate.setMonth(state.habitsDate.getMonth() + 1); renderHabits(); });
+    if (UI.habits.prev) UI.habits.prev.addEventListener('click', () => { 
+        state.habitsDate.setMonth(state.habitsDate.getMonth() - 1); 
+        const wrap = document.querySelector('.ht-table-wrap');
+        if (wrap) wrap.scrollLeft = 0;
+        renderHabits(); 
+        setTimeout(() => { if(wrap) wrap.scrollLeft = 0; }, 20);
+    });
+    if (UI.habits.next) UI.habits.next.addEventListener('click', () => { 
+        state.habitsDate.setMonth(state.habitsDate.getMonth() + 1); 
+        const wrap = document.querySelector('.ht-table-wrap');
+        if (wrap) wrap.scrollLeft = 0;
+        renderHabits(); 
+        setTimeout(() => { if(wrap) wrap.scrollLeft = 0; }, 20);
+    });
 
     // BOOTSTRAP
     DB.init().then(() => {
