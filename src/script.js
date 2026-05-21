@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (UI.mainTitle) UI.mainTitle.textContent = titles[targetId] || 'Завдання';
 
         state.activeView = targetId;
-        UI.fab.style.display = (targetId === CONFIG.VIEWS.SETTINGS || targetId === CONFIG.VIEWS.HABITS) ? 'none' : 'flex';
+        UI.fab.style.display = (targetId === CONFIG.VIEWS.SETTINGS) ? 'none' : 'flex';
 
         if (targetId === CONFIG.VIEWS.CALENDAR) renderCalendar();
         if (targetId === CONFIG.VIEWS.HABITS) {
@@ -375,7 +375,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    UI.fab.addEventListener('click', () => openSheet());
+    UI.fab.addEventListener('click', () => {
+        if (state.activeView === CONFIG.VIEWS.HABITS) {
+            openHabitSheet();
+        } else {
+            openSheet();
+        }
+    });
 
     const closeAllModals = () => {
         UI.sheet.classList.remove('open');
