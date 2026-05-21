@@ -336,6 +336,40 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.overlay.classList.add('open');
         UI.daily.sheet.classList.remove('open');
     };
+    const autoSaveTaskSubtasks = async () => {
+        let id = UI.inputs.id.value;
+        let existingTask = null;
+        if (id) {
+            existingTask = await DB.query('readonly', 'get', id);
+        }
+
+        const t = UI.inputs.title.value.trim() || 'Без назви';
+        if (!id) {
+            id = Date.now().toString();
+            UI.inputs.id.value = id;
+            const sheetTitle = document.getElementById('sheet-title');
+            if (sheetTitle) sheetTitle.textContent = 'Редагувати завдання';
+        }
+
+        const task = {
+            id: id,
+            title: t,
+            description: UI.inputs.desc.value.trim(),
+            dueDate: UI.inputs.date.value,
+            completed: existingTask ? existingTask.completed : false,
+            categoryId: UI.inputs.category.value,
+            priority: UI.inputs.priority.value,
+            recurrence: UI.inputs.recurrence.value,
+            subtasks: state.modalSubtasks,
+            order: existingTask ? existingTask.order : Date.now(),
+            notified: existingTask ? existingTask.notified : false,
+            completionDate: existingTask ? existingTask.completionDate : null
+        };
+
+        await DB.query('readwrite', 'put', task);
+        renderList();
+        renderCalendar();
+    };
 
     const renderModalSubtasks = () => {
         UI.subtasks.list.innerHTML = '';
@@ -347,24 +381,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span>${Utils.escapeHTML(sub.title)}</span>
                 <button type="button" class="remove-sub-btn">✖</button>
             `;
-            li.querySelector('.sub-check').onclick = () => {
+            li.querySelector('.sub-check').onclick = async () => {
                 sub.completed = !sub.completed;
                 renderModalSubtasks();
+                await autoSaveTaskSubtasks();
             };
-            li.querySelector('.remove-sub-btn').onclick = () => {
+            li.querySelector('.remove-sub-btn').onclick = async () => {
                 state.modalSubtasks.splice(index, 1);
                 renderModalSubtasks();
+                await autoSaveTaskSubtasks();
             };
             UI.subtasks.list.appendChild(li);
         });
     };
 
-    const addSubtaskFromModal = () => {
+    const addSubtaskFromModal = async () => {
         const val = UI.subtasks.input.value.trim();
         if (!val) return;
         state.modalSubtasks.push({ id: Date.now().toString(), title: val, completed: false });
         UI.subtasks.input.value = '';
         renderModalSubtasks();
+        await autoSaveTaskSubtasks();
     };
 
     UI.subtasks.addBtn.addEventListener('click', addSubtaskFromModal);
