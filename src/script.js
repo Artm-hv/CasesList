@@ -1,17 +1,3 @@
-window.onerror = function(msg, url, line) {
-    const errDiv = document.createElement('div');
-    errDiv.style.position = 'fixed';
-    errDiv.style.bottom = '10px';
-    errDiv.style.left = '10px';
-    errDiv.style.background = 'red';
-    errDiv.style.color = 'white';
-    errDiv.style.padding = '10px';
-    errDiv.style.zIndex = '99999';
-    errDiv.style.fontSize = '12px';
-    errDiv.textContent = `Error: ${msg} at ${line}`;
-    document.body.appendChild(errDiv);
-};
-
 /**
  * Main Application logic
  */
@@ -107,6 +93,28 @@ document.addEventListener('DOMContentLoaded', () => {
             themeToggle: document.getElementById('theme-toggle')
         }
     };
+
+    // Dynamic upgrade for cached index.html (polyline/polygon -> path for Bezier curves support)
+    if (UI.habits.linePath && UI.habits.linePath.tagName.toLowerCase() !== 'path') {
+        const oldPath = UI.habits.linePath;
+        const newPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        newPath.id = oldPath.id;
+        newPath.setAttribute('fill', 'none');
+        newPath.setAttribute('stroke', 'var(--primary-color)');
+        newPath.setAttribute('stroke-width', '2');
+        newPath.setAttribute('stroke-linecap', 'round');
+        newPath.setAttribute('stroke-linejoin', 'round');
+        oldPath.parentNode.replaceChild(newPath, oldPath);
+        UI.habits.linePath = newPath;
+    }
+    if (UI.habits.lineFill && UI.habits.lineFill.tagName.toLowerCase() !== 'path') {
+        const oldFill = UI.habits.lineFill;
+        const newFill = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        newFill.id = oldFill.id;
+        newFill.setAttribute('fill', 'rgba(179,136,255,0.15)');
+        oldFill.parentNode.replaceChild(newFill, oldFill);
+        UI.habits.lineFill = newFill;
+    }
 
     // Audio System
     const AudioSystem = {
