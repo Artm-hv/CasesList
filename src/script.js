@@ -1233,35 +1233,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const chartVals = [];
-        let runningDone = 0;
-        let lastValidVal = 0;
         const isPastMonth = (y < now.getFullYear() || (y === now.getFullYear() && m < now.getMonth()));
         const isFutureMonth = (y > now.getFullYear() || (y === now.getFullYear() && m > now.getMonth()));
 
-        for (let d = 1; d <= dim; d++) {
-            if (isFutureMonth) {
-                chartVals.push(0);
-            } else if (isPastMonth || d <= todayD || todayD === -1) {
-                runningDone += dailyData[d].done;
-                const totalPossible = d * habits.length;
-                const v = totalPossible > 0 ? Math.round(runningDone / totalPossible * 100) : 0;
-                chartVals.push(v);
-                lastValidVal = v;
-            } else {
-                // Майбутні дні поточного місяця: показуємо проекцію поточного прогресу (горизонтальна лінія)
-                chartVals.push(lastValidVal);
-            }
+        let maxDay = dim;
+        if (isFutureMonth) {
+            maxDay = 0;
+        } else if (!isPastMonth && todayD !== -1) {
+            maxDay = todayD;
+        }
+
+        for (let d = 1; d <= maxDay; d++) {
+            const dd = dailyData[d];
+            const v = dd.total > 0 ? Math.round(dd.done / dd.total * 100) : 0;
+            chartVals.push(v);
         }
 
         const svgW = 400, svgH = 50, pad = 2;
-        const pts = chartVals.map((v, i) => {
-            const x = pad + (i / Math.max(dim - 1, 1)) * (svgW - 2 * pad);
-            const yV = svgH - pad - (v / 100) * (svgH - 2 * pad);
-            return `${x.toFixed(1)},${yV.toFixed(1)}`;
-        });
-        if (UI.habits.linePath) UI.habits.linePath.setAttribute('points', pts.join(' '));
-        if (UI.habits.lineFill) {
-            UI.habits.lineFill.setAttribute('points', `${pad.toFixed(1)},${svgH} ${pts.join(' ')} ${(svgW - pad).toFixed(1)},${svgH}`);
+        if (chartVals.length === 0) {
+            if (UI.habits.linePath) UI.habits.linePath.setAttribute('points', '');
+            if (UI.habits.lineFill) UI.habits.lineFill.setAttribute('points', '');
+        } else {
+            const pts = chartVals.map((v, i) => {
+                const x = pad + (i / Math.max(dim - 1, 1)) * (svgW - 2 * pad);
+                const yV = svgH - pad - (v / 100) * (svgH - 2 * pad);
+                return `${x.toFixed(1)},${yV.toFixed(1)}`;
+            });
+            if (UI.habits.linePath) UI.habits.linePath.setAttribute('points', pts.join(' '));
+            if (UI.habits.lineFill) {
+                const endX = pad + ((chartVals.length - 1) / Math.max(dim - 1, 1)) * (svgW - 2 * pad);
+                UI.habits.lineFill.setAttribute('points', `${pad.toFixed(1)},${svgH} ${pts.join(' ')} ${endX.toFixed(1)},${svgH}`);
+            }
         }
 
 
