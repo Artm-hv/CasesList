@@ -1154,7 +1154,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!habits.length) {
             tbl.style.gridTemplateColumns = '1fr';
             tbl.innerHTML = '<div class="ht-empty"><div class="ht-empty-icon">📋</div><p>Поки немає звичок.<br>Додайте першу!</p></div>';
-            if (UI.habits.linePath) UI.habits.linePath.setAttribute('points', '');
+            if (UI.habits.linePath) UI.habits.linePath.setAttribute('d', '');
+            if (UI.habits.lineFill) UI.habits.lineFill.setAttribute('d', '');
             if (UI.habits.donutRing) UI.habits.donutRing.style.strokeDashoffset = DONUT_C;
             if (UI.habits.donutPct) UI.habits.donutPct.textContent = '0%';
             return;
@@ -1251,18 +1252,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const svgW = 400, svgH = 50, pad = 2;
         if (chartVals.length === 0) {
-            if (UI.habits.linePath) UI.habits.linePath.setAttribute('points', '');
-            if (UI.habits.lineFill) UI.habits.lineFill.setAttribute('points', '');
+            if (UI.habits.linePath) UI.habits.linePath.setAttribute('d', '');
+            if (UI.habits.lineFill) UI.habits.lineFill.setAttribute('d', '');
         } else {
-            const pts = chartVals.map((v, i) => {
+            const points = chartVals.map((v, i) => {
                 const x = pad + (i / Math.max(dim - 1, 1)) * (svgW - 2 * pad);
-                const yV = svgH - pad - (v / 100) * (svgH - 2 * pad);
-                return `${x.toFixed(1)},${yV.toFixed(1)}`;
+                const y = svgH - pad - (v / 100) * (svgH - 2 * pad);
+                return { x, y };
             });
-            if (UI.habits.linePath) UI.habits.linePath.setAttribute('points', pts.join(' '));
+
+            const getBezierPath = (pts) => {
+                if (pts.length === 0) return '';
+                if (pts.length === 1) return `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+                let d = `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+                for (let i = 0; i < pts.length - 1; i++) {
+                    const p0 = pts[i];
+                    const p1 = pts[i + 1];
+                    const cpX1 = p0.x + (p1.x - p0.x) / 2;
+                    const cpY1 = p0.y;
+                    const cpX2 = p0.x + (p1.x - p0.x) / 2;
+                    const cpY2 = p1.y;
+                    d += ` C ${cpX1.toFixed(1)},${cpY1.toFixed(1)} ${cpX2.toFixed(1)},${cpY2.toFixed(1)} ${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
+                }
+                return d;
+            };
+
+            const pathD = getBezierPath(points);
+            if (UI.habits.linePath) UI.habits.linePath.setAttribute('d', pathD);
             if (UI.habits.lineFill) {
                 const endX = pad + ((chartVals.length - 1) / Math.max(dim - 1, 1)) * (svgW - 2 * pad);
-                UI.habits.lineFill.setAttribute('points', `${pad.toFixed(1)},${svgH} ${pts.join(' ')} ${endX.toFixed(1)},${svgH}`);
+                const fillD = `${pathD} L ${endX.toFixed(1)},${svgH} L ${pad.toFixed(1)},${svgH} Z`;
+                UI.habits.lineFill.setAttribute('d', fillD);
             }
         }
 
