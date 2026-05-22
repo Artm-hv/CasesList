@@ -1146,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const start = colIdx, end = colIdx + wk.length;
             weekColRanges.push({ start, end, days: wk });
             const lbl = document.createElement('div'); lbl.className = `ht-wk-label wk-${wi + 1}`;
-            lbl.textContent = `ТИЖДЕНЬ ${wi + 1}`;
+            lbl.textContent = wk.length < 4 ? `Т. ${wi + 1}` : `ТИЖДЕНЬ ${wi + 1}`;
             lbl.style.gridColumn = `${start} / ${end}`; lbl.style.gridRow = '1'; tbl.appendChild(lbl);
             colIdx = end;
         });
