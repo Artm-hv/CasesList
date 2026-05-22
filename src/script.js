@@ -1108,7 +1108,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const dim = new Date(y, m + 1, 0).getDate();
         const now = new Date();
         const todayD = now.getFullYear() === y && now.getMonth() === m ? now.getDate() : -1;
-        UI.habits.monthTitle.textContent = new Date(y, m).toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
+        let titleText = new Date(y, m).toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase()).replace(/\s*р\.?$/, '');
+        if (window.innerWidth < 768) {
+            const abbreviations = {
+                'Січень': 'Січ.',
+                'Лютий': 'Лют.',
+                'Березень': 'Бер.',
+                'Квітень': 'Квіт.',
+                'Травень': 'Трав.',
+                'Червень': 'Черв.',
+                'Липень': 'Лип.',
+                'Серпень': 'Серп.',
+                'Вересень': 'Вер.',
+                'Жовтень': 'Жовт.',
+                'Листопад': 'Лист.',
+                'Грудень': 'Груд.'
+            };
+            const match = titleText.match(/^([А-Яа-яЄєІіЇїҐґ]+)\s+(.+)$/);
+            if (match) {
+                const monthName = match[1];
+                const rest = match[2];
+                if (abbreviations[monthName]) {
+                    titleText = `${abbreviations[monthName]} ${rest}`;
+                }
+            }
+        }
+        UI.habits.monthTitle.textContent = titleText;
 
         const getWeeks = (y, m) => {
             const daysInMonth = new Date(y, m + 1, 0).getDate();
@@ -1315,6 +1340,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wrap) wrap.scrollLeft = 0;
         renderHabits(); 
         setTimeout(() => { if(wrap) wrap.scrollLeft = 0; }, 20);
+    });
+
+    window.addEventListener('resize', () => {
+        if (state.activeView === CONFIG.VIEWS.HABITS) {
+            renderHabits();
+        }
     });
 
     // BOOTSTRAP
