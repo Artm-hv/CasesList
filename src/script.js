@@ -1165,6 +1165,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const dailyData = {}; for (let d = 1; d <= dim; d++) dailyData[d] = { done: 0, total: habits.length };
         const weekStats = weeks.map(() => ({ done: 0, total: 0 }));
+        let overallDone = 0;
+        let overallPossible = 0;
 
         habits.forEach((h, hi) => {
             const rowNum = hi + 3;
@@ -1182,10 +1184,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (d === todayD) cls += ' today-active'; else if (d < todayD || todayD === -1) cls += ' past'; else cls += ' future';
                 ck.className = cls; if (d === todayD) ck.addEventListener('click', () => toggleHabitDay(h.id, dk));
                 cell.appendChild(ck); cell.style.gridColumn = `${d + 1}`; cell.style.gridRow = `${rowNum}`; tbl.appendChild(cell);
-                if (d <= todayD || todayD === -1) { possible++; if (on) done++; }
+                if (d <= todayD || todayD === -1) { 
+                    possible++; 
+                    overallPossible++;
+                    if (on) {
+                        done++; 
+                        overallDone++;
+                    } 
+                }
                 if (on) dailyData[d].done++;
                 const wi = weeks.findIndex(wk => wk.includes(d));
-                if (wi >= 0 && (d <= todayD || todayD === -1)) { weekStats[wi].total++; if (on) weekStats[wi].done++; }
+                if (wi >= 0) { 
+                    weekStats[wi].total++; 
+                    if (on) weekStats[wi].done++; 
+                }
             }
             const gc = document.createElement('div'); gc.className = 'ht-goal-cell'; gc.textContent = dim;
             gc.style.gridColumn = `${dim + 2}`; gc.style.gridRow = `${rowNum}`; tbl.appendChild(gc);
@@ -1207,8 +1219,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (UI.habits.linePath) UI.habits.linePath.setAttribute('points', pts.join(' '));
         if (UI.habits.lineFill) UI.habits.lineFill.setAttribute('points', `${pad},${svgH} ${pts.join(' ')} ${(svgW - pad).toFixed(1)},${svgH}`);
 
-        let totalD = 0, totalP = 0; weekStats.forEach(ws => { totalD += ws.done; totalP += ws.total; });
-        const overallPct = totalP > 0 ? Math.round(totalD / totalP * 100) : 0;
+        const overallPct = overallPossible > 0 ? Math.round(overallDone / overallPossible * 100) : 0;
         if (UI.habits.donutPct) UI.habits.donutPct.textContent = overallPct + '%';
         if (UI.habits.donutRing) UI.habits.donutRing.style.strokeDashoffset = DONUT_C - (overallPct / 100) * DONUT_C;
 
