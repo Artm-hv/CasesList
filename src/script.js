@@ -312,14 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.fab.style.display = (targetId === CONFIG.VIEWS.SETTINGS) ? 'none' : 'flex';
 
         if (targetId === CONFIG.VIEWS.CALENDAR) renderCalendar();
-        if (targetId === CONFIG.VIEWS.HABITS) {
-            const wrap = document.querySelector('.ht-table-wrap');
-            if (wrap) wrap.scrollLeft = 0;
-            renderHabits();
-            setTimeout(() => {
-                if (wrap) wrap.scrollLeft = 0;
-            }, 20);
-        }
+        if (targetId === CONFIG.VIEWS.HABITS) renderHabits();
         if (targetId === CONFIG.VIEWS.LIST) renderList();
     }));
 
@@ -1071,9 +1064,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         dBtn.addEventListener('click', (e) => {
             if (e.detail === 1) {
-                UI.daily.title.textContent = `Завдання на ${new Date(y, m, i).toLocaleString('uk-UA', { day: 'numeric', month: 'short' })}`;
-                renderDailyTasks(dsTasks, ds);
-                UI.daily.sheet.classList.add('open'); UI.overlay.classList.add('open');
+                state.calDate = new Date(y, m, i);
+                state.calView = 'day';
+                UI.cal.viewBtns.forEach(b => {
+                    if (b.getAttribute('data-view') === 'day') {
+                        b.classList.add('active');
+                    } else {
+                        b.classList.remove('active');
+                    }
+                });
+                renderCalendar();
             }
         });
     };
@@ -1207,6 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let d = 1; d <= dim; d++) {
             const dow = new Date(y, m, d).getDay() || 7;
             const dh = document.createElement('div'); dh.className = 'ht-day-hd';
+            if (d === todayD) dh.classList.add('today-hdr');
             dh.innerHTML = `${DAY_NAMES[dow - 1]}<span class="dn">${d}</span>`;
             dh.style.gridColumn = `${d + 1}`; dh.style.gridRow = '2'; tbl.appendChild(dh);
         }
@@ -1321,6 +1322,19 @@ document.addEventListener('DOMContentLoaded', () => {
             item.innerHTML = `<div class="hw-ring-wrap"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="${WK_R}" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="3"/><circle cx="18" cy="18" r="${WK_R}" fill="none" stroke="${color}" stroke-width="3" stroke-dasharray="${WK_C.toFixed(1)} ${WK_C.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 18 18)" style="transition:stroke-dashoffset .5s"/></svg><span class="hw-pct">${wpct}%</span></div><div class="hw-label">Тиж.${wi + 1}</div><div class="hw-counts">${ws.done}/${ws.total}</div>`;
             UI.habits.weeklyDonuts.appendChild(item);
         });
+
+        // Automatically scroll to the current day/week if in the current month, else scroll to start
+        setTimeout(() => {
+            const wrap = document.querySelector('.ht-table-wrap');
+            if (wrap) {
+                const activeHeader = wrap.querySelector('.today-hdr');
+                if (activeHeader) {
+                    activeHeader.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                } else {
+                    wrap.scrollLeft = 0;
+                }
+            }
+        }, 50);
     };
 
     const toggleHabitDay = async (id, dk) => {
@@ -1373,17 +1387,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (UI.habits.prev) UI.habits.prev.addEventListener('click', () => { 
         state.habitsDate.setMonth(state.habitsDate.getMonth() - 1); 
-        const wrap = document.querySelector('.ht-table-wrap');
-        if (wrap) wrap.scrollLeft = 0;
         renderHabits(); 
-        setTimeout(() => { if(wrap) wrap.scrollLeft = 0; }, 20);
     });
     if (UI.habits.next) UI.habits.next.addEventListener('click', () => { 
         state.habitsDate.setMonth(state.habitsDate.getMonth() + 1); 
-        const wrap = document.querySelector('.ht-table-wrap');
-        if (wrap) wrap.scrollLeft = 0;
         renderHabits(); 
-        setTimeout(() => { if(wrap) wrap.scrollLeft = 0; }, 20);
     });
 
     window.addEventListener('resize', () => {

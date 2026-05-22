@@ -1324,6 +1324,16 @@ input[type="datetime-local"] {
    opacity: 0.5;
 }
 
+.ht-day-hd.today-hdr {
+   color: var(--primary-color) !important;
+}
+
+.ht-day-hd.today-hdr span {
+   color: var(--primary-color) !important;
+   opacity: 1 !important;
+   font-weight: 800;
+}
+
 .ht-goal-hd,
 .ht-prog-hd {
    font-size: 9px;
