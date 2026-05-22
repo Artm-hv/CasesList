@@ -1207,9 +1207,27 @@ document.addEventListener('DOMContentLoaded', () => {
             pc.style.gridColumn = `${dim + 3}`; pc.style.gridRow = `${rowNum}`; tbl.appendChild(pc);
         });
 
-        const chartVals = []; for (let d = 1; d <= dim; d++) {
-            const dd = dailyData[d]; chartVals.push(dd.total > 0 ? Math.round(dd.done / dd.total * 100) : 0);
+        const chartVals = [];
+        let runningDone = 0;
+        let lastValidVal = 0;
+        const isPastMonth = (y < now.getFullYear() || (y === now.getFullYear() && m < now.getMonth()));
+        const isFutureMonth = (y > now.getFullYear() || (y === now.getFullYear() && m > now.getMonth()));
+
+        for (let d = 1; d <= dim; d++) {
+            if (isFutureMonth) {
+                chartVals.push(0);
+            } else if (isPastMonth || d <= todayD || todayD === -1) {
+                runningDone += dailyData[d].done;
+                const totalPossible = d * habits.length;
+                const v = totalPossible > 0 ? Math.round(runningDone / totalPossible * 100) : 0;
+                chartVals.push(v);
+                lastValidVal = v;
+            } else {
+                // Майбутні дні поточного місяця: показуємо проекцію поточного прогресу (горизонтальна лінія)
+                chartVals.push(lastValidVal);
+            }
         }
+
         const svgW = 400, svgH = 50, pad = 2;
         const pts = chartVals.map((v, i) => {
             const x = pad + (i / Math.max(dim - 1, 1)) * (svgW - 2 * pad);
@@ -1217,7 +1235,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return `${x.toFixed(1)},${yV.toFixed(1)}`;
         });
         if (UI.habits.linePath) UI.habits.linePath.setAttribute('points', pts.join(' '));
-        if (UI.habits.lineFill) UI.habits.lineFill.setAttribute('points', `${pad},${svgH} ${pts.join(' ')} ${(svgW - pad).toFixed(1)},${svgH}`);
+        if (UI.habits.lineFill) {
+            UI.habits.lineFill.setAttribute('points', `${pad.toFixed(1)},${svgH} ${pts.join(' ')} ${(svgW - pad).toFixed(1)},${svgH}`);
+        }
+
 
         const overallPct = overallPossible > 0 ? Math.round(overallDone / overallPossible * 100) : 0;
         if (UI.habits.donutPct) UI.habits.donutPct.textContent = overallPct + '%';
