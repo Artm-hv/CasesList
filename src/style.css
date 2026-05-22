@@ -1884,4 +1884,20 @@ input:checked + .slider:before {
     border-width: 0 1.8px 1.8px 0;
     transform: rotate(45deg);
     margin-bottom: 2px;
+}
+
+/* Premium transition for calendar views */
+.cal-fade-in {
+   animation: calFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes calFadeIn {
+   from {
+      opacity: 0;
+      transform: translateY(12px);
+   }
+   to {
+      opacity: 1;
+      transform: translateY(0);
+   }
 }

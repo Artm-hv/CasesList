@@ -863,12 +863,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderCalendar = async () => {
         if (state.activeView !== CONFIG.VIEWS.CALENDAR) return;
 
+        // Reset animation to trigger it again
+        if (UI.cal.grid) {
+            UI.cal.grid.classList.remove('cal-fade-in');
+            void UI.cal.grid.offsetWidth; // Force reflow
+        }
+        if (UI.cal.agenda) {
+            UI.cal.agenda.classList.remove('cal-fade-in');
+            void UI.cal.agenda.offsetWidth; // Force reflow
+        }
+
         UI.cal.container.classList.remove('cal-view-month', 'cal-view-week', 'cal-view-day');
         UI.cal.container.classList.add(`cal-view-${state.calView}`);
 
         if (state.calView === 'month') await renderMonthView();
         else if (state.calView === 'week') await renderWeekView();
         else if (state.calView === 'day') await renderDayView();
+
+        // Add class to trigger premium smooth animation
+        if (UI.cal.grid) UI.cal.grid.classList.add('cal-fade-in');
+        if (UI.cal.agenda) UI.cal.agenda.classList.add('cal-fade-in');
     };
 
     const renderMonthView = async () => {
