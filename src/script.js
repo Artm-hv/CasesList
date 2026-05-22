@@ -863,14 +863,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderCalendar = async () => {
         if (state.activeView !== CONFIG.VIEWS.CALENDAR) return;
 
-        // Reset animation to trigger it again
+        // Immediately hide old content to prevent flickering/layout shift during async IndexedDB queries
         if (UI.cal.grid) {
+            UI.cal.grid.style.opacity = '0';
             UI.cal.grid.classList.remove('cal-fade-in');
-            void UI.cal.grid.offsetWidth; // Force reflow
         }
         if (UI.cal.agenda) {
+            UI.cal.agenda.style.opacity = '0';
             UI.cal.agenda.classList.remove('cal-fade-in');
-            void UI.cal.agenda.offsetWidth; // Force reflow
         }
 
         UI.cal.container.classList.remove('cal-view-month', 'cal-view-week', 'cal-view-day');
@@ -880,9 +880,17 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (state.calView === 'week') await renderWeekView();
         else if (state.calView === 'day') await renderDayView();
 
-        // Add class to trigger premium smooth animation
-        if (UI.cal.grid) UI.cal.grid.classList.add('cal-fade-in');
-        if (UI.cal.agenda) UI.cal.agenda.classList.add('cal-fade-in');
+        // Trigger premium slide-up fade-in animation with the fresh new content
+        if (UI.cal.grid) {
+            UI.cal.grid.style.opacity = '';
+            void UI.cal.grid.offsetWidth; // Force reflow
+            UI.cal.grid.classList.add('cal-fade-in');
+        }
+        if (UI.cal.agenda) {
+            UI.cal.agenda.style.opacity = '';
+            void UI.cal.agenda.offsetWidth; // Force reflow
+            UI.cal.agenda.classList.add('cal-fade-in');
+        }
     };
 
     const renderMonthView = async () => {
