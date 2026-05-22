@@ -1,3 +1,17 @@
+window.onerror = function(msg, url, line) {
+    const errDiv = document.createElement('div');
+    errDiv.style.position = 'fixed';
+    errDiv.style.bottom = '10px';
+    errDiv.style.left = '10px';
+    errDiv.style.background = 'red';
+    errDiv.style.color = 'white';
+    errDiv.style.padding = '10px';
+    errDiv.style.zIndex = '99999';
+    errDiv.style.fontSize = '12px';
+    errDiv.textContent = `Error: ${msg} at ${line}`;
+    document.body.appendChild(errDiv);
+};
+
 /**
  * Main Application logic
  */
