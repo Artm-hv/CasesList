@@ -305,61 +305,63 @@
                 <button id="close-sheet" class="icon-btn">✖</button>
             </div>
             <form id="task-form">
-                <input type="hidden" id="task-id">
-                <div class="form-group">
-                    <label>Назва</label>
-                    <input type="text" id="task-title" required placeholder="Що плануєте зробити?" autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label>Опис</label>
-                    <textarea id="task-desc" rows="2" placeholder="Додайте деталі..."></textarea>
-                </div>
-                <div class="form-row">
-                    <div class="form-group half">
-                        <label>Категорія</label>
-                        <select id="task-category">
-                            <option value="work">Навчання</option>
-                            <option value="home">Дім</option>
-                            <option value="personal" selected>Особисте</option>
-                        </select>
+                <div class="form-scroll-body">
+                    <input type="hidden" id="task-id">
+                    <div class="form-group">
+                        <label>Назва</label>
+                        <input type="text" id="task-title" required placeholder="Що плануєте зробити?" autocomplete="off">
                     </div>
-                    <div class="form-group half">
-                        <label>Пріоритет</label>
-                        <select id="task-priority">
-                            <option value="high">Високий</option>
-                            <option value="medium" selected>Середній</option>
-                            <option value="low">Низький</option>
-                        </select>
+                    <div class="form-group">
+                        <label>Опис</label>
+                        <textarea id="task-desc" rows="2" placeholder="Додайте деталі..."></textarea>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group half">
-                        <label>Дедлайн</label>
-                        <input type="datetime-local" id="task-date">
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label>Категорія</label>
+                            <select id="task-category">
+                                <option value="work">Навчання</option>
+                                <option value="home">Дім</option>
+                                <option value="personal" selected>Особисте</option>
+                            </select>
+                        </div>
+                        <div class="form-group half">
+                            <label>Пріоритет</label>
+                            <select id="task-priority">
+                                <option value="high">Високий</option>
+                                <option value="medium" selected>Середній</option>
+                                <option value="low">Низький</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group half">
-                        <label>Повторення</label>
-                        <select id="task-recurrence">
-                            <option value="none">Ніколи</option>
-                            <option value="daily">Щодня</option>
-                            <option value="weekly">Щотижня</option>
-                            <option value="monthly">Щомісяця</option>
-                        </select>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label>Дедлайн</label>
+                            <input type="datetime-local" id="task-date">
+                        </div>
+                        <div class="form-group half">
+                            <label>Повторення</label>
+                            <select id="task-recurrence">
+                                <option value="none">Ніколи</option>
+                                <option value="daily">Щодня</option>
+                                <option value="weekly">Щотижня</option>
+                                <option value="monthly">Щомісяця</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Підпункти</label>
-                    <div class="subtasks-container">
-                        <ul id="subtasks-list" class="modal-subtask-list"></ul>
-                        <div class="add-subtask-row">
-                            <input type="text" id="new-subtask-input" placeholder="Впишіть підпункт..."
-                                autocomplete="off">
-                            <button type="button" id="add-subtask-btn" class="icon-btn">
-                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path d="M12 5V19M5 12H19" />
-                                </svg>
-                            </button>
+                    <div class="form-group">
+                        <label>Підпункти</label>
+                        <div class="subtasks-container">
+                            <ul id="subtasks-list" class="modal-subtask-list"></ul>
+                            <div class="add-subtask-row">
+                                <input type="text" id="new-subtask-input" placeholder="Впишіть підпункт..."
+                                    autocomplete="off">
+                                <button type="button" id="add-subtask-btn" class="icon-btn">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M12 5V19M5 12H19" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

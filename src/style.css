@@ -1713,7 +1713,7 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 250px;
+    max-height: 135px;
     overflow-y: auto;
     padding-right: 8px;
 }
@@ -1900,4 +1900,41 @@ input:checked + .slider:before {
       opacity: 1;
       transform: translateY(0);
    }
+}
+
+/* Sticky submit button layout for task bottom sheet */
+#bottom-sheet {
+   overflow-y: hidden;
+}
+
+#bottom-sheet #task-form {
+   display: flex;
+   flex-direction: column;
+   max-height: calc(90vh - 120px);
+   min-height: 0;
+   gap: 0; /* Gap is managed by scroll body */
+}
+
+#bottom-sheet .form-scroll-body {
+   flex: 1;
+   overflow-y: auto;
+   padding-right: 4px;
+   display: flex;
+   flex-direction: column;
+   gap: 16px;
+   padding-bottom: 12px;
+}
+
+#bottom-sheet .form-scroll-body::-webkit-scrollbar {
+   width: 4px;
+}
+
+#bottom-sheet .form-scroll-body::-webkit-scrollbar-thumb {
+   background: var(--border-color);
+   border-radius: 4px;
+}
+
+#bottom-sheet .primary-btn {
+   margin-top: 12px;
+   flex-shrink: 0;
 }
