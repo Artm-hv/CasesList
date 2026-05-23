@@ -417,6 +417,16 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.subtasks.input.value = '';
         renderModalSubtasks();
         await autoSaveTaskSubtasks();
+        
+        // Auto scroll to the bottom of the subtasks list
+        setTimeout(() => {
+            if (UI.subtasks.list) {
+                UI.subtasks.list.scrollTo({
+                    top: UI.subtasks.list.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
+        }, 30);
     };
 
     UI.subtasks.addBtn.addEventListener('click', addSubtaskFromModal);
@@ -595,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStreaks();
     };
 
-    const createTaskLi = (task) => {
+    const createTaskLi = (task, isCalendar = false) => {
         const li = document.createElement('li');
         li.className = `todo-item ${task.completed ? 'completed' : ''}`;
         li.setAttribute('data-id', task.id);
@@ -693,26 +703,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 300);
         });
 
-        let dragTimer;
-        const startLongPress = (e) => {
-            if (task.completed) return;
-            if (e.target.closest('.checkbox, .icon-btn')) return;
+        if (!isCalendar) {
+            let dragTimer;
+            const startLongPress = (e) => {
+                if (task.completed) return;
+                if (e.target.closest('.checkbox, .icon-btn')) return;
+                
+                dragTimer = setTimeout(() => {
+                    if ('vibrate' in navigator) navigator.vibrate(50);
+                    startDrag(e, li);
+                }, 500);
+            };
+
+            const cancelLongPress = () => clearTimeout(dragTimer);
+
+            li.addEventListener('mousedown', startLongPress);
+            li.addEventListener('touchstart', startLongPress, { passive: true });
             
-            dragTimer = setTimeout(() => {
-                if ('vibrate' in navigator) navigator.vibrate(50);
-                startDrag(e, li);
-            }, 500);
-        };
-
-        const cancelLongPress = () => clearTimeout(dragTimer);
-
-        li.addEventListener('mousedown', startLongPress);
-        li.addEventListener('touchstart', startLongPress, { passive: true });
-        
-        li.addEventListener('mouseup', cancelLongPress);
-        li.addEventListener('mouseleave', cancelLongPress);
-        li.addEventListener('touchend', cancelLongPress);
-        li.addEventListener('touchmove', cancelLongPress);
+            li.addEventListener('mouseup', cancelLongPress);
+            li.addEventListener('mouseleave', cancelLongPress);
+            li.addEventListener('touchend', cancelLongPress);
+            li.addEventListener('touchmove', cancelLongPress);
+        }
 
         return li;
     };
@@ -1065,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', () => {
             header.textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
 
             groupDiv.appendChild(header);
-            group.tasks.forEach(task => groupDiv.appendChild(createTaskLi(task)));
+            group.tasks.forEach(task => groupDiv.appendChild(createTaskLi(task, true)));
             UI.cal.agenda.appendChild(groupDiv);
         });
     };
