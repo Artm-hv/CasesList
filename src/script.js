@@ -622,7 +622,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${renderSubtasksInline(task)}
             </div>
             <div class="task-actions">
-                ${!task.completed && task.dueDate ? `<button class="icon-btn bell-btn" aria-label="Google Calendar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>` : ''}
+                ${!task.completed && task.dueDate ? `<button class="icon-btn bell-btn" aria-label="Нагадування"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>` : ''}
                 <button class="icon-btn edit-btn" aria-label="Edit"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
                 <button class="icon-btn delete-btn" aria-label="Delete"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
             </div>
@@ -684,11 +684,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!task.completed && task.dueDate) {
             li.querySelector('.bell-btn').addEventListener('click', () => {
-                const fmtDate = (d) => d.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z';
+                const title = task.title;
+                const desc = task.description || '';
                 const start = new Date(task.dueDate);
-                const end = new Date(start.getTime() + 30 * 60000);
-                const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&dates=${fmtDate(start)}/${fmtDate(end)}&details=${encodeURIComponent(task.description || '')}`;
-                window.open(url, '_blank');
+                const end = new Date(start.getTime() + 30 * 60 * 1000); // 30 mins
+
+                const formatICSDate = (d) => {
+                    return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+                };
+
+                const icsContent = [
+                    'BEGIN:VCALENDAR',
+                    'VERSION:2.0',
+                    'PRODID:-//CasesList//Task Calendar//EN',
+                    'BEGIN:VEVENT',
+                    `UID:${task.id}@caseslist.app`,
+                    `DTSTAMP:${formatICSDate(new Date())}`,
+                    `DTSTART:${formatICSDate(start)}`,
+                    `DTEND:${formatICSDate(end)}`,
+                    `SUMMARY:${title}`,
+                    `DESCRIPTION:${desc.replace(/\n/g, '\\n')}`,
+                    'END:VEVENT',
+                    'END:VCALENDAR'
+                ].join('\r\n');
+
+                const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `${title.replace(/[^a-z0-9а-яєіїґ]/gi, '_')}.ics`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
             });
         }
 
