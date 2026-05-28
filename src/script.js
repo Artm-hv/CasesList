@@ -530,12 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.activeView !== CONFIG.VIEWS.LIST && state.activeView !== CONFIG.VIEWS.SETTINGS) return;
 
         let tasks = await DB.query('readonly', 'getAll');
-        const priorityWeight = { [CONFIG.PRIORITIES.HIGH]: 3, [CONFIG.PRIORITIES.MEDIUM]: 2, [CONFIG.PRIORITIES.LOW]: 1 };
-
         tasks.sort((a, b) => {
-            const pA = priorityWeight[a.priority] || 2;
-            const pB = priorityWeight[b.priority] || 2;
-            if (pA !== pB) return pB - pA;
             return (b.order || 0) - (a.order || 0);
         });
 
