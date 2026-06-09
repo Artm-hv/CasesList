@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
             category: document.getElementById('task-category'),
             priority: document.getElementById('task-priority'),
             date: document.getElementById('task-date'),
+            allDay: document.getElementById('task-all-day'),
             recurrence: document.getElementById('task-recurrence'),
             desc: document.getElementById('task-desc')
         },
@@ -90,7 +91,24 @@ document.addEventListener('DOMContentLoaded', () => {
             yes: document.getElementById('confirm-yes')
         },
         settings: {
-            themeToggle: document.getElementById('theme-toggle')
+            themeToggle: document.getElementById('theme-toggle'),
+            notificationsToggle: document.getElementById('notifications-toggle'),
+            btnOpenCategories: document.getElementById('btn-open-categories')
+        },
+        categories: {
+            sheet: document.getElementById('categories-sheet'),
+            formSheet: document.getElementById('category-form-sheet'),
+            form: document.getElementById('category-form'),
+            name: document.getElementById('category-name'),
+            emoji: document.getElementById('category-emoji'),
+            colorValue: document.getElementById('category-color-value'),
+            colorPicker: document.getElementById('category-color-picker'),
+            list: document.getElementById('categories-list'),
+            close: document.getElementById('close-categories-sheet'),
+            closeFormSheet: document.getElementById('close-category-form-sheet'),
+            id: document.getElementById('category-id'),
+            cancelBtn: document.getElementById('category-cancel-btn'),
+            btnAddCategory: document.getElementById('btn-add-category')
         }
     };
 
@@ -198,7 +216,8 @@ document.addEventListener('DOMContentLoaded', () => {
         autoScrollInterval: null,
         lastClientX: 0,
         lastClientY: 0,
-        modalSubtasks: []
+        modalSubtasks: [],
+        categories: []
     };
 
     // ================= HELPER FUNCTIONS =================
@@ -328,22 +347,59 @@ document.addEventListener('DOMContentLoaded', () => {
         renderList();
     }));
 
+    if (UI.inputs.allDay) {
+        UI.inputs.allDay.addEventListener('change', () => {
+            const val = UI.inputs.date.value;
+            if (UI.inputs.allDay.checked) {
+                UI.inputs.date.type = 'date';
+                if (val && val.includes('T')) {
+                    UI.inputs.date.value = val.split('T')[0];
+                }
+            } else {
+                UI.inputs.date.type = 'datetime-local';
+                if (val && !val.includes('T')) {
+                    UI.inputs.date.value = val + 'T12:00';
+                }
+            }
+        });
+    }
+
     // Form Handling
     const openSheet = (task = null, datePreset = null) => {
         if (task) {
             document.getElementById('sheet-title').textContent = 'Редагувати завдання';
             UI.inputs.id.value = task.id; UI.inputs.title.value = task.title;
             UI.inputs.desc.value = task.description || '';
-            UI.inputs.date.value = task.dueDate || '';
-            UI.inputs.category.value = task.categoryId || CONFIG.CATEGORIES.PERSONAL;
+            UI.inputs.category.value = task.categoryId || '';
             UI.inputs.priority.value = task.priority || CONFIG.PRIORITIES.MEDIUM;
             UI.inputs.recurrence.value = task.recurrence || CONFIG.RECURRENCE.NONE;
             state.modalSubtasks = task.subtasks ? [...task.subtasks] : [];
+
+            const isAllDay = task.dueDate && !task.dueDate.includes('T');
+            if (UI.inputs.allDay) {
+                UI.inputs.allDay.checked = !!isAllDay;
+                UI.inputs.date.type = isAllDay ? 'date' : 'datetime-local';
+            }
+            UI.inputs.date.value = task.dueDate || '';
         } else {
             document.getElementById('sheet-title').textContent = 'Нове завдання';
             UI.form.reset(); UI.inputs.id.value = '';
-            UI.inputs.category.value = state.category !== CONFIG.CATEGORIES.ALL ? state.category : CONFIG.CATEGORIES.PERSONAL;
-            if (datePreset) { UI.inputs.date.value = datePreset + 'T12:00'; }
+            UI.inputs.category.value = state.category !== CONFIG.CATEGORIES.ALL ? state.category : '';
+            
+            if (UI.inputs.allDay) {
+                UI.inputs.allDay.checked = false;
+                UI.inputs.date.type = 'datetime-local';
+            }
+
+            if (datePreset) { 
+                if (UI.inputs.allDay) {
+                    UI.inputs.allDay.checked = true;
+                    UI.inputs.date.type = 'date';
+                    UI.inputs.date.value = datePreset;
+                } else {
+                    UI.inputs.date.value = datePreset + 'T12:00'; 
+                }
+            }
             state.modalSubtasks = [];
         }
         renderModalSubtasks();
@@ -377,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
             recurrence: UI.inputs.recurrence.value,
             subtasks: state.modalSubtasks,
             order: existingTask ? existingTask.order : Date.now(),
-            notified: existingTask ? existingTask.notified : false,
+            notified: existingTask ? (existingTask.dueDate === UI.inputs.date.value ? existingTask.notified : false) : false,
             completionDate: existingTask ? existingTask.completionDate : null
         };
 
@@ -451,8 +507,492 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.daily.sheet.classList.remove('open');
         UI.history.sheet?.classList.remove('open');
         UI.habits.sheet?.classList.remove('open');
+        UI.categories.sheet?.classList.remove('open');
+        UI.categories.formSheet?.classList.remove('open');
         UI.confirm.modal.classList.remove('open');
         UI.overlay.classList.remove('open');
+    };
+
+    // ================= CATEGORIES LOGIC =================
+
+    const loadCategories = async () => {
+        state.categories = await DB.categories('readonly', 'getAll');
+        state.categories.sort((a, b) => (a.order || 0) - (b.order || 0));
+    };
+
+    const renderCategoryTabs = () => {
+        const tabsContainer = document.getElementById('category-tabs');
+        if (!tabsContainer) return;
+
+        let html = `<button class="tab ${state.category === CONFIG.CATEGORIES.ALL ? 'active' : ''}" data-cat="all">Всі</button>`;
+        
+        state.categories.forEach(cat => {
+            html += `<button class="tab ${state.category === cat.id ? 'active' : ''}" data-cat="${cat.id}">${cat.emoji || ''} ${cat.name}</button>`;
+        });
+        
+        tabsContainer.innerHTML = html;
+
+        tabsContainer.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                tabsContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                state.category = e.target.getAttribute('data-cat');
+                renderList();
+            });
+        });
+    };
+
+    const populateTaskCategorySelect = () => {
+        const select = UI.inputs.category;
+        if (!select) return;
+        
+        let html = '<option value="">Без категорії</option>';
+        state.categories.forEach(cat => {
+            html += `<option value="${cat.id}">${cat.emoji || ''} ${cat.name}</option>`;
+        });
+        select.innerHTML = html;
+    };
+
+    const PRESETS_COLORS = ['#b388ff', '#69f0ae', '#ffb74d', '#ff5252', '#64b5f6', '#ff4081'];
+
+    const renderColorPicker = () => {
+        const container = UI.categories.colorPicker;
+        if (!container) return;
+        container.innerHTML = '';
+        const currentVal = UI.categories.colorValue.value || PRESETS_COLORS[0];
+        
+        // Render preset options
+        PRESETS_COLORS.forEach(color => {
+            const opt = document.createElement('div');
+            opt.className = `color-option ${color.toLowerCase() === currentVal.toLowerCase() ? 'selected' : ''}`;
+            opt.style.backgroundColor = color;
+            opt.onclick = () => {
+                UI.categories.colorValue.value = color;
+                container.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+                opt.classList.add('selected');
+                
+                // Reset custom color picker display
+                const customOpt = container.querySelector('.custom-color-option');
+                if (customOpt) {
+                    customOpt.classList.remove('selected');
+                    customOpt.style.borderColor = 'rgba(255,255,255,0.3)';
+                    customOpt.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+                    const svg = customOpt.querySelector('.custom-color-icon');
+                    if (svg) {
+                        svg.setAttribute("stroke", "white");
+                        svg.querySelectorAll("circle").forEach(c => c.setAttribute("fill", "white"));
+                    }
+                }
+            };
+            container.appendChild(opt);
+        });
+
+        // Render custom color picker option
+        const isPreset = PRESETS_COLORS.some(c => c.toLowerCase() === currentVal.toLowerCase());
+        
+        const customOpt = document.createElement('div');
+        customOpt.className = `color-option custom-color-option ${!isPreset ? 'selected' : ''}`;
+        customOpt.style.position = 'relative';
+        customOpt.style.display = 'flex';
+        customOpt.style.alignItems = 'center';
+        customOpt.style.justifyContent = 'center';
+        customOpt.style.backgroundColor = 'transparent';
+        
+        if (!isPreset) {
+            customOpt.style.borderColor = currentVal;
+            customOpt.style.boxShadow = `0 0 12px ${currentVal}`;
+        } else {
+            customOpt.style.borderColor = 'rgba(255,255,255,0.3)';
+            customOpt.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+        }
+
+        // Add hidden color input inside
+        const colorInput = document.createElement('input');
+        colorInput.type = 'color';
+        colorInput.value = isPreset ? '#ffffff' : currentVal;
+        colorInput.style.position = 'absolute';
+        colorInput.style.top = '0';
+        colorInput.style.left = '0';
+        colorInput.style.width = '100%';
+        colorInput.style.height = '100%';
+        colorInput.style.opacity = '0';
+        colorInput.style.cursor = 'pointer';
+
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("width", "16");
+        svg.setAttribute("height", "16");
+        svg.setAttribute("fill", "none");
+        
+        const strokeColor = !isPreset ? currentVal : "white";
+        svg.setAttribute("stroke", strokeColor);
+        svg.setAttribute("stroke-width", "2.5");
+        svg.setAttribute("stroke-linecap", "round");
+        svg.setAttribute("stroke-linejoin", "round");
+        svg.style.filter = "drop-shadow(0 1px 1.5px rgba(0,0,0,0.4))";
+        svg.style.pointerEvents = "none";
+        svg.style.transition = "stroke 0.2s, fill 0.2s";
+        svg.classList.add("custom-color-icon");
+
+        const path1 = document.createElementNS(svgNS, "path");
+        path1.setAttribute("d", "M12 22C17.52 22 22 17.52 22 12S17.52 2 12 2 2 6.48 2 12c0 1.25.43 2.4 1.15 3.32C5.1 18.2 6 18.9 6 20c0 1.1.9 2 2 2h4Z");
+        svg.appendChild(path1);
+
+        const circleColor = !isPreset ? currentVal : "white";
+        const points = [
+            {cx: "7.5", cy: "10.5"},
+            {cx: "11.5", cy: "7.5"},
+            {cx: "16.5", cy: "9.5"},
+            {cx: "15.5", cy: "14.5"}
+        ];
+        points.forEach(pt => {
+            const circle = document.createElementNS(svgNS, "circle");
+            circle.setAttribute("cx", pt.cx);
+            circle.setAttribute("cy", pt.cy);
+            circle.setAttribute("r", "1.5");
+            circle.setAttribute("fill", circleColor);
+            svg.appendChild(circle);
+        });
+
+        colorInput.oninput = (e) => {
+            const newColor = e.target.value;
+            UI.categories.colorValue.value = newColor;
+            
+            // Highlight custom option
+            container.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+            customOpt.classList.add('selected');
+            customOpt.style.borderColor = newColor;
+            customOpt.style.boxShadow = `0 0 12px ${newColor}`;
+            
+            svg.setAttribute("stroke", newColor);
+            svg.querySelectorAll("circle").forEach(c => c.setAttribute("fill", newColor));
+        };
+
+        customOpt.appendChild(colorInput);
+        customOpt.appendChild(svg);
+        container.appendChild(customOpt);
+    };
+
+    const closeCategoryFormSheet = () => {
+        UI.categories.formSheet?.classList.remove('open');
+        if (UI.categories.sheet && !UI.categories.sheet.classList.contains('open')) {
+            UI.overlay.classList.remove('open');
+        }
+    };
+
+    const openCategoryFormSheetForCreate = () => {
+        const titleEl = document.getElementById('category-form-title');
+        if (titleEl) titleEl.innerText = 'Створити категорію';
+        UI.categories.form.reset();
+        UI.categories.id.value = '';
+        UI.categories.colorValue.value = PRESETS_COLORS[0];
+        UI.categories.cancelBtn.style.display = 'none';
+        renderColorPicker();
+        UI.categories.formSheet.classList.add('open');
+    };
+
+    const openCategoriesSheet = () => {
+        renderCategoriesList();
+        UI.categories.sheet.classList.add('open');
+        UI.overlay.classList.add('open');
+    };
+
+    const renderCategoriesList = () => {
+        const container = UI.categories.list;
+        if (!container) return;
+        container.innerHTML = '';
+        
+        state.categories.forEach(cat => {
+            const li = document.createElement('li');
+            li.className = 'todo-item';
+            li.setAttribute('data-cat-id', cat.id);
+            li.style.borderLeft = `4px solid ${cat.color}`;
+            li.style.padding = '12px 16px';
+            li.style.cursor = 'grab';
+
+            let dragTimer;
+            const startLongPress = (e) => {
+                if (e.target.closest('.icon-btn')) return;
+                
+                dragTimer = setTimeout(() => {
+                    if ('vibrate' in navigator) navigator.vibrate(50);
+                    startCatDrag(e, li);
+                }, 500);
+            };
+
+            const cancelLongPress = () => clearTimeout(dragTimer);
+
+            li.addEventListener('mousedown', startLongPress);
+            li.addEventListener('touchstart', startLongPress, { passive: true });
+            
+            li.addEventListener('mouseup', cancelLongPress);
+            li.addEventListener('mouseleave', cancelLongPress);
+            li.addEventListener('touchend', cancelLongPress);
+            li.addEventListener('touchmove', cancelLongPress);
+            
+            const deleteBtn = `
+                <button class="icon-btn delete-cat-btn" aria-label="Delete" style="margin-left:8px;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            `;
+
+            li.innerHTML = `
+                <span style="font-size:20px; margin-right:8px;">${cat.emoji || ''}</span>
+                <span style="flex:1; font-weight:600; color:var(--text-primary);">${Utils.escapeHTML(cat.name)}</span>
+                <div class="task-actions" style="display:flex; flex-direction:row; align-items:center; gap:8px;">
+                    <button class="icon-btn edit-cat-btn" aria-label="Edit">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    ${deleteBtn}
+                </div>
+            `;
+
+            const editBtnEl = li.querySelector('.edit-cat-btn');
+            const deleteBtnEl = li.querySelector('.delete-cat-btn');
+
+            const stopProp = (e) => e.stopPropagation();
+            
+            // Isolate buttons from list dragging events
+            ['mousedown', 'touchstart', 'mouseup', 'touchend', 'click'].forEach(event => {
+                editBtnEl.addEventListener(event, stopProp, { passive: true });
+                deleteBtnEl.addEventListener(event, stopProp, { passive: true });
+            });
+
+            editBtnEl.onclick = (e) => {
+                e.stopPropagation();
+                const titleEl = document.getElementById('category-form-title');
+                if (titleEl) titleEl.innerText = 'Редагувати категорію';
+                UI.categories.id.value = cat.id;
+                UI.categories.name.value = cat.name;
+                UI.categories.emoji.value = cat.emoji || '';
+                UI.categories.colorValue.value = cat.color;
+                UI.categories.cancelBtn.style.display = 'block';
+                renderColorPicker();
+                UI.categories.formSheet.classList.add('open');
+            };
+
+            deleteBtnEl.onclick = (e) => {
+                e.stopPropagation();
+                showConfirm('Видалити категорію?', `Категорія «${cat.name}» буде видалена.`, async () => {
+                    await DB.categories('readwrite', 'delete', cat.id);
+                    
+                    if (state.category === cat.id) {
+                        state.category = CONFIG.CATEGORIES.ALL;
+                    }
+
+                    const allTasks = await DB.query('readonly', 'getAll');
+                    for (let t of allTasks) {
+                        if (t.categoryId === cat.id) {
+                            t.categoryId = '';
+                            await DB.query('readwrite', 'put', t);
+                        }
+                    }
+
+                    await loadCategories();
+                    renderCategoryTabs();
+                    populateTaskCategorySelect();
+                    renderCategoriesList();
+                    renderList();
+                });
+            };
+
+            container.appendChild(li);
+        });
+    };
+
+    let catDraggingEl = null;
+    let catPlaceholder = null;
+    let catDragStartY = 0;
+    let catDragStartTop = 0;
+
+    const startCatDrag = (e, li) => {
+        if (e.target.closest('.icon-btn')) return;
+        if (e.type === 'touchstart') e.preventDefault();
+
+        catDraggingEl = li;
+        const rect = li.getBoundingClientRect();
+        catDragStartY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+        catDragStartTop = rect.top;
+
+        catPlaceholder = document.createElement('li');
+        catPlaceholder.className = 'todo-item placeholder';
+        catPlaceholder.style.height = `${rect.height}px`;
+        catPlaceholder.style.opacity = '0';
+
+        li.parentNode.insertBefore(catPlaceholder, li);
+
+        li.classList.add('is-dragging');
+        li.style.position = 'fixed';
+        li.style.width = `${rect.width}px`;
+        li.style.top = `${rect.top}px`;
+        li.style.left = `${rect.left}px`;
+        li.style.zIndex = '1000';
+        li.style.transition = 'none';
+
+        // Append to app-container to completely bypass containing blocks of the transformed bottom sheet
+        const appContainer = document.querySelector('.app-container') || document.body;
+        appContainer.appendChild(li);
+
+        document.addEventListener('mousemove', onCatDragMove, { passive: false });
+        document.addEventListener('touchmove', onCatDragMove, { passive: false });
+        document.addEventListener('mouseup', onCatDragEnd);
+        document.addEventListener('touchend', onCatDragEnd);
+    };
+
+    const onCatDragMove = (e) => {
+        if (!catDraggingEl) return;
+        e.preventDefault();
+        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+        const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+
+        const deltaY = clientY - catDragStartY;
+        catDraggingEl.style.top = `${catDragStartTop + deltaY}px`;
+
+        catDraggingEl.style.visibility = 'hidden';
+        const elUnder = document.elementFromPoint(clientX, clientY);
+        catDraggingEl.style.visibility = 'visible';
+
+        if (!elUnder) return;
+        const targetLi = elUnder.closest('#categories-list li.todo-item:not(.is-dragging)');
+        if (targetLi && targetLi !== catPlaceholder) {
+            const rect = targetLi.getBoundingClientRect();
+            const mid = rect.top + rect.height / 2;
+            if (clientY < mid) {
+                targetLi.parentNode.insertBefore(catPlaceholder, targetLi);
+            } else {
+                targetLi.parentNode.insertBefore(catPlaceholder, targetLi.nextSibling);
+            }
+        }
+    };
+
+    const onCatDragEnd = async () => {
+        if (!catDraggingEl) return;
+
+        document.removeEventListener('mousemove', onCatDragMove);
+        document.removeEventListener('touchmove', onCatDragMove);
+        document.removeEventListener('mouseup', onCatDragEnd);
+        document.removeEventListener('touchend', onCatDragEnd);
+
+        if (catPlaceholder && catPlaceholder.parentNode) {
+            catPlaceholder.parentNode.insertBefore(catDraggingEl, catPlaceholder);
+            catPlaceholder.remove();
+        }
+
+        catDraggingEl.classList.remove('is-dragging');
+        catDraggingEl.style = '';
+
+        const listItems = Array.from(UI.categories.list.querySelectorAll('li.todo-item'));
+        const categories = await DB.categories('readonly', 'getAll');
+        
+        const writeTx = DB.instance.transaction(['categories'], 'readwrite');
+        const writeStore = writeTx.objectStore('categories');
+
+        for (let i = 0; i < listItems.length; i++) {
+            const catId = listItems[i].getAttribute('data-cat-id');
+            const catObj = categories.find(c => c.id === catId);
+            if (catObj) {
+                catObj.order = i * 1000;
+                writeStore.put(catObj);
+            }
+        }
+
+        writeTx.oncomplete = async () => {
+            await loadCategories();
+            renderCategoryTabs();
+            populateTaskCategorySelect();
+            renderCategoriesList();
+            renderList();
+        };
+
+        catDraggingEl = null;
+        catPlaceholder = null;
+    };
+
+    // ================= NOTIFICATIONS SYSTEM =================
+
+    const initNotifications = () => {
+        if (!UI.settings.notificationsToggle) return;
+
+        if (typeof Notification === 'undefined') {
+            UI.settings.notificationsToggle.disabled = true;
+            UI.settings.notificationsToggle.checked = false;
+            const desc = UI.settings.notificationsToggle.closest('.settings-item')?.querySelector('.settings-item-desc');
+            if (desc) {
+                desc.textContent = 'Не підтримується цим браузером';
+            }
+            return;
+        }
+
+        const isEnabled = localStorage.getItem('notifications_enabled') === 'true';
+        UI.settings.notificationsToggle.checked = isEnabled && Notification.permission === 'granted';
+
+        UI.settings.notificationsToggle.addEventListener('change', async () => {
+            if (UI.settings.notificationsToggle.checked) {
+                if (Notification.permission === 'default') {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        localStorage.setItem('notifications_enabled', 'true');
+                        UI.settings.notificationsToggle.checked = true;
+                    } else {
+                        localStorage.setItem('notifications_enabled', 'false');
+                        UI.settings.notificationsToggle.checked = false;
+                        alert('Будь ласка, дозвольте сповіщення у налаштуваннях вашого браузера.');
+                    }
+                } else if (Notification.permission === 'granted') {
+                    localStorage.setItem('notifications_enabled', 'true');
+                } else {
+                    localStorage.setItem('notifications_enabled', 'false');
+                    UI.settings.notificationsToggle.checked = false;
+                    alert('Сповіщення заблоковано в браузері. Змініть налаштування сайту для їх увімкнення.');
+                }
+            } else {
+                localStorage.setItem('notifications_enabled', 'false');
+            }
+        });
+
+        setInterval(checkReminders, 30000);
+        checkReminders();
+    };
+
+    const checkReminders = async () => {
+        if (typeof Notification === 'undefined' || localStorage.getItem('notifications_enabled') !== 'true' || Notification.permission !== 'granted') return;
+
+        const tasks = await DB.query('readonly', 'getAll');
+        const now = new Date();
+        const nowMinutesStr = now.toISOString().slice(0, 16);
+        
+        let dbChanged = false;
+
+        for (let task of tasks) {
+            if (!task.completed && task.dueDate && task.dueDate.includes('T')) {
+                if (task.dueDate <= nowMinutesStr && !task.notified) {
+                    task.notified = true;
+                    await DB.query('readwrite', 'put', task);
+                    dbChanged = true;
+
+                    try {
+                        new Notification(task.title, {
+                            body: task.description || 'Час виконати завдання!',
+                            icon: 'assets/apple-touch-icon.png'
+                        });
+                        AudioSystem.play();
+                    } catch (e) {
+                        console.error('Failed to trigger notification', e);
+                    }
+                }
+            }
+        }
+
+        if (dbChanged) {
+            renderList();
+        }
     };
 
     document.getElementById('close-sheet').addEventListener('click', closeAllModals);
@@ -469,6 +1009,60 @@ document.addEventListener('DOMContentLoaded', () => {
     if (UI.gamification.btnAnalytics) {
         UI.gamification.btnAnalytics.addEventListener('click', openAnalytics);
         UI.gamification.closeAnalytics.addEventListener('click', closeAllModals);
+    }
+
+    if (UI.settings.btnOpenCategories) {
+        UI.settings.btnOpenCategories.addEventListener('click', openCategoriesSheet);
+    }
+    if (UI.categories.close) {
+        UI.categories.close.addEventListener('click', closeAllModals);
+    }
+    if (UI.categories.btnAddCategory) {
+        UI.categories.btnAddCategory.addEventListener('click', openCategoryFormSheetForCreate);
+    }
+    if (UI.categories.closeFormSheet) {
+        UI.categories.closeFormSheet.addEventListener('click', closeCategoryFormSheet);
+    }
+    if (UI.categories.cancelBtn) {
+        UI.categories.cancelBtn.addEventListener('click', () => {
+            UI.categories.form.reset();
+            UI.categories.id.value = '';
+            UI.categories.cancelBtn.style.display = 'none';
+            renderColorPicker();
+            closeCategoryFormSheet();
+        });
+    }
+    if (UI.categories.form) {
+        UI.categories.form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = UI.categories.id.value;
+            let existingCat = null;
+            if (id) {
+                existingCat = state.categories.find(c => c.id === id);
+            }
+
+            const name = UI.categories.name.value.trim();
+            if (!name) return;
+            const emoji = UI.categories.emoji.value.trim() || '📁';
+            const color = UI.categories.colorValue.value;
+            const catId = id || 'cat_' + Date.now().toString();
+
+            const order = existingCat ? (existingCat.order || 0) : (state.categories.length > 0 ? Math.max(...state.categories.map(c => c.order || 0)) + 1000 : 1000);
+
+            const cat = { id: catId, name, emoji, color, order };
+            await DB.categories('readwrite', 'put', cat);
+            
+            UI.categories.form.reset();
+            UI.categories.id.value = '';
+            UI.categories.cancelBtn.style.display = 'none';
+            closeCategoryFormSheet();
+            
+            await loadCategories();
+            renderCategoryTabs();
+            populateTaskCategorySelect();
+            renderCategoriesList();
+            renderList();
+        });
     }
 
     UI.form.addEventListener('submit', async (e) => {
@@ -492,7 +1086,7 @@ document.addEventListener('DOMContentLoaded', () => {
             recurrence: UI.inputs.recurrence.value,
             subtasks: state.modalSubtasks,
             order: existingTask ? existingTask.order : Date.now(),
-            notified: existingTask ? existingTask.notified : false,
+            notified: existingTask ? (existingTask.dueDate === UI.inputs.date.value ? existingTask.notified : false) : false,
             completionDate: existingTask ? existingTask.completionDate : null
         };
 
@@ -530,7 +1124,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.activeView !== CONFIG.VIEWS.LIST && state.activeView !== CONFIG.VIEWS.SETTINGS) return;
 
         let tasks = await DB.query('readonly', 'getAll');
+        const priorityWeight = {
+            'high': 3,
+            'medium': 2,
+            'low': 1
+        };
         tasks.sort((a, b) => {
+            const pA = priorityWeight[a.priority] || 2;
+            const pB = priorityWeight[b.priority] || 2;
+            if (pA !== pB) {
+                return pB - pA;
+            }
             return (b.order || 0) - (a.order || 0);
         });
 
@@ -605,8 +1209,23 @@ document.addEventListener('DOMContentLoaded', () => {
         li.className = `todo-item ${task.completed ? 'completed' : ''}`;
         li.setAttribute('data-id', task.id);
 
-        const isOverdue = !task.completed && task.dueDate && new Date(task.dueDate) < new Date() ? 'overdue' : '';
-        const metaHtml = task.dueDate ? `<div class="todo-meta ${isOverdue}">🗓️ ${Utils.formatDateTime(task.dueDate)}${task.recurrence && task.recurrence !== CONFIG.RECURRENCE.NONE ? ' 🔄' : ''}</div>` : '';
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        let overdueClass = '';
+        if (!task.completed && task.dueDate) {
+            if (!task.dueDate.includes('T')) {
+                if (task.dueDate < todayStr) overdueClass = 'overdue';
+            } else {
+                if (new Date(task.dueDate) < new Date()) overdueClass = 'overdue';
+            }
+        }
+        const catObj = state.categories.find(c => c.id === task.categoryId);
+        const catHtml = catObj ? `<span class="category-tag" style="background: ${catObj.color}15; color: ${catObj.color};">${catObj.emoji || ''} ${catObj.name}</span>` : '';
+        const metaHtml = task.dueDate || catObj ? `
+            <div class="todo-meta-row">
+                ${catHtml}
+                ${task.dueDate ? `<div class="todo-meta ${overdueClass}">🗓️ ${Utils.formatDateTime(task.dueDate)}${task.recurrence && task.recurrence !== CONFIG.RECURRENCE.NONE ? ' 🔄' : ''}</div>` : ''}
+            </div>
+        ` : '';
 
         li.innerHTML = `
             <div class="checkbox"></div>
@@ -645,11 +1264,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         completionDate: null
                     };
                     if (clone.dueDate) {
-                        const date = new Date(clone.dueDate);
+                        const isAllDay = !clone.dueDate.includes('T');
+                        let date;
+                        if (isAllDay) {
+                            const [y, m, day] = clone.dueDate.split('-').map(Number);
+                            date = new Date(y, m - 1, day);
+                        } else {
+                            date = new Date(clone.dueDate);
+                        }
                         if (clone.recurrence === CONFIG.RECURRENCE.DAILY) date.setDate(date.getDate() + 1);
                         else if (clone.recurrence === CONFIG.RECURRENCE.WEEKLY) date.setDate(date.getDate() + 7);
                         else if (clone.recurrence === CONFIG.RECURRENCE.MONTHLY) date.setMonth(date.getMonth() + 1);
-                        clone.dueDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                        
+                        if (isAllDay) {
+                            clone.dueDate = Utils.formatDateISO(date.getFullYear(), date.getMonth(), date.getDate());
+                        } else {
+                            clone.dueDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                        }
                     }
                     await DB.query('readwrite', 'put', clone);
                 }
@@ -681,11 +1312,26 @@ document.addEventListener('DOMContentLoaded', () => {
             li.querySelector('.bell-btn').addEventListener('click', () => {
                 const title = task.title;
                 const desc = task.description || '';
-                const start = new Date(task.dueDate);
-                const end = new Date(start.getTime() + 30 * 60 * 1000); // 30 mins
+                const isAllDay = !task.dueDate.includes('T');
+
+                let start, end;
+                if (isAllDay) {
+                    const [y, m, day] = task.dueDate.split('-').map(Number);
+                    start = new Date(y, m - 1, day);
+                    end = new Date(y, m - 1, day + 1);
+                } else {
+                    start = new Date(task.dueDate);
+                    end = new Date(start.getTime() + 30 * 60 * 1000); // 30 mins
+                }
 
                 const formatICSDate = (d) => {
                     return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+                };
+                const formatICSAllDayDate = (d) => {
+                    const year = d.getFullYear();
+                    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                    const day = d.getDate().toString().padStart(2, '0');
+                    return `${year}${month}${day}`;
                 };
 
                 const icsContent = [
@@ -695,8 +1341,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     'BEGIN:VEVENT',
                     `UID:${task.id}@caseslist.app`,
                     `DTSTAMP:${formatICSDate(new Date())}`,
-                    `DTSTART:${formatICSDate(start)}`,
-                    `DTEND:${formatICSDate(end)}`,
+                    isAllDay ? `DTSTART;VALUE=DATE:${formatICSAllDayDate(start)}` : `DTSTART:${formatICSDate(start)}`,
+                    isAllDay ? `DTEND;VALUE=DATE:${formatICSAllDayDate(end)}` : `DTEND:${formatICSDate(end)}`,
                     `SUMMARY:${title}`,
                     `DESCRIPTION:${desc.replace(/\n/g, '\\n')}`,
                     'END:VEVENT',
@@ -862,7 +1508,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const index = listItems.indexOf(state.draggingEl);
         const taskId = state.draggingEl.getAttribute('data-id');
 
-        let newOrder = Date.now();
         const tasks = await DB.query('readonly', 'getAll');
         const taskObj = tasks.find(t => t.id === taskId);
 
@@ -873,14 +1518,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const prevTask = prevLi ? tasks.find(t => t.id === prevLi.getAttribute('data-id')) : null;
             const nextTask = nextLi ? tasks.find(t => t.id === nextLi.getAttribute('data-id')) : null;
 
+            let targetPriority = taskObj.priority || CONFIG.PRIORITIES.MEDIUM;
+            let newOrder = Date.now();
+
             if (prevTask && nextTask) {
-                newOrder = ((prevTask.order || 0) + (nextTask.order || 0)) / 2;
+                if (prevTask.priority === nextTask.priority) {
+                    targetPriority = prevTask.priority;
+                    newOrder = ((prevTask.order || 0) + (nextTask.order || 0)) / 2;
+                } else {
+                    // Boundary case: dropped between two different priorities.
+                    if (taskObj.priority === nextTask.priority) {
+                        targetPriority = nextTask.priority;
+                        newOrder = (nextTask.order || 0) + 1000;
+                    } else {
+                        targetPriority = prevTask.priority;
+                        newOrder = (prevTask.order || 0) - 1000;
+                    }
+                }
             } else if (prevTask) {
+                targetPriority = prevTask.priority;
                 newOrder = (prevTask.order || 0) - 1000;
             } else if (nextTask) {
+                targetPriority = nextTask.priority;
                 newOrder = (nextTask.order || 0) + 1000;
             }
 
+            taskObj.priority = targetPriority;
             taskObj.order = newOrder;
             await DB.query('readwrite', 'put', taskObj);
             renderList();
@@ -1451,6 +2114,38 @@ document.addEventListener('DOMContentLoaded', () => {
         renderHabits(); 
     });
 
+    // Emoji input fields utility for clean user interaction (focus/blur)
+    const setupEmojiInput = (input, defaultEmoji) => {
+        if (!input) return;
+        input.addEventListener('focus', () => {
+            input.dataset.tempPlaceholder = input.placeholder || '';
+            input.dataset.tempValue = input.value || '';
+            
+            input.placeholder = '';
+            if (input.value === defaultEmoji || input.value === '') {
+                input.value = '';
+            } else {
+                input.select();
+            }
+        });
+
+        input.addEventListener('blur', () => {
+            if (input.dataset.tempPlaceholder !== undefined) {
+                input.placeholder = input.dataset.tempPlaceholder;
+            }
+            if (input.value.trim() === '') {
+                if (input.dataset.tempValue) {
+                    input.value = input.dataset.tempValue;
+                } else {
+                    input.value = '';
+                }
+            }
+        });
+    };
+
+    setupEmojiInput(UI.categories.emoji, '📁');
+    setupEmojiInput(UI.habits.inputEmoji, '📌');
+
     window.addEventListener('resize', () => {
         if (state.activeView === CONFIG.VIEWS.HABITS) {
             renderHabits();
@@ -1458,7 +2153,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // BOOTSTRAP
-    DB.init().then(() => {
+    DB.init().then(async () => {
+        await loadCategories();
+        renderCategoryTabs();
+        populateTaskCategorySelect();
+        initNotifications();
         renderList();
         renderCalendar();
     });
