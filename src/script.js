@@ -966,7 +966,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const tasks = await DB.query('readonly', 'getAll');
         const now = new Date();
-        const nowMinutesStr = now.toISOString().slice(0, 16);
+        const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+        const nowMinutesStr = localNow.toISOString().slice(0, 16);
         
         let dbChanged = false;
 
