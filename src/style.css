@@ -959,7 +959,7 @@ header p {
    text-transform: uppercase;
 }
 
-.form-group input,
+.form-group input:not([type="checkbox"]),
 .form-group textarea,
 .form-group select {
    background: var(--surface-light);
@@ -976,12 +976,13 @@ header p {
    font-family: inherit;
 }
 
-.form-group input,
+.form-group input:not([type="checkbox"]),
 .form-group select {
    height: 48px;
 }
 
-input[type="datetime-local"] {
+input[type="datetime-local"],
+input[type="date"] {
    -webkit-appearance: none;
    appearance: none;
    display: flex;
@@ -990,7 +991,7 @@ input[type="datetime-local"] {
    justify-content: flex-start;
 }
 
-.form-group input:focus,
+.form-group input:not([type="checkbox"]):focus,
 .form-group textarea:focus,
 .form-group select:focus {
    border-color: var(--primary-color);
@@ -1000,6 +1001,52 @@ input[type="datetime-local"] {
    resize: none;
    min-height: 80px;
    padding: 14px 16px;
+}
+
+/* Custom Checkbox for All Day */
+.all-day-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    text-transform: none !important;
+}
+
+.all-day-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--surface-light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+    position: relative;
+    outline: none;
+    margin: 0;
+}
+
+.all-day-checkbox:checked {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.all-day-checkbox:checked::after {
+    content: '';
+    width: 4px;
+    height: 7px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    position: absolute;
+    top: 2px;
 }
 
 /* Modal: Pomodoro Таймер */
@@ -1937,4 +1984,47 @@ input:checked + .slider:before {
 #bottom-sheet .primary-btn {
    margin-top: 12px;
    flex-shrink: 0;
+}
+
+/* Custom categories management styling */
+.category-color-picker {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.color-option {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.color-option.selected {
+    border-color: #fff;
+    transform: scale(1.15);
+    box-shadow: 0 0 12px rgba(255,255,255,0.5);
+}
+
+.category-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.todo-meta-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 4px;
 }

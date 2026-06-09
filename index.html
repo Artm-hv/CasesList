@@ -194,7 +194,25 @@
                                 <div class="settings-item-info">
                                     <div class="settings-item-title">Архів завдань</div>
                                     <div class="settings-item-desc">Виконано: <span
-                                            id="settings-completed-count">0</span></div>
+                                             id="settings-completed-count">0</span></div>
+                                </div>
+                            </div>
+                            <svg class="settings-chevron" viewBox="0 0 24 24" width="20" height="20" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M9 18l6-6-6-6" />
+                            </svg>
+                        </button>
+                        <button class="settings-item" id="btn-open-categories">
+                            <div class="settings-item-left">
+                                <div class="settings-icon orange">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                    </svg>
+                                </div>
+                                <div class="settings-item-info">
+                                    <div class="settings-item-title">Керування категоріями</div>
+                                    <div class="settings-item-desc">Налаштувати власні категорії</div>
                                 </div>
                             </div>
                             <svg class="settings-chevron" viewBox="0 0 24 24" width="20" height="20" fill="none"
@@ -205,7 +223,7 @@
                     </div>
                 </div>
 
-                <!-- Group 2: Appearance (Placeholders for looks) -->
+                <!-- Group 2: Appearance -->
                 <div class="settings-group">
                     <div class="settings-label">Вигляд</div>
                     <div class="settings-list">
@@ -232,7 +250,33 @@
                     </div>
                 </div>
 
-                <!-- Group 3: About -->
+                <!-- Group 3: Notifications -->
+                <div class="settings-group">
+                    <div class="settings-label">Сповіщення</div>
+                    <div class="settings-list">
+                        <div class="settings-item">
+                            <div class="settings-item-left">
+                                <div class="settings-icon blue">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                    </svg>
+                                </div>
+                                <div class="settings-item-info">
+                                    <div class="settings-item-title">Сповіщення дедлайнів</div>
+                                    <div class="settings-item-desc">Системні нагадування та звук</div>
+                                </div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="notifications-toggle">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Group 4: About -->
                 <div class="settings-group">
                     <div class="settings-label">Про програму</div>
                     <div class="settings-list">
@@ -335,7 +379,13 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group half">
-                            <label>Дедлайн</label>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                                <label for="task-date">Дедлайн</label>
+                                <label class="all-day-label">
+                                    <input type="checkbox" id="task-all-day" class="all-day-checkbox">
+                                    Весь день
+                                </label>
+                            </div>
                             <input type="datetime-local" id="task-date">
                         </div>
                         <div class="form-group half">
@@ -399,6 +449,51 @@
             <ul id="completed-tasks" class="todo-list" style="margin-bottom: 40px;"></ul>
         </div>
 
+        <!-- Sheet: Керування категоріями -->
+        <div id="categories-sheet" class="bottom-sheet" style="padding-bottom: 30px;">
+            <div class="sheet-header">
+                <h2>Керування категоріями</h2>
+                <button id="close-categories-sheet" class="icon-btn">✖</button>
+            </div>
+            <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 12px;">Ваші категорії</div>
+            <ul id="categories-list" class="todo-list" style="margin-bottom: 20px; max-height: 320px; overflow-y: auto;">
+                <!-- dynamic list of categories -->
+            </ul>
+            <button id="btn-add-category" class="primary-btn" style="width: 100%; margin-top: 10px;">Додати категорію</button>
+        </div>
+
+        <!-- Sheet: Редагування/Створення категорії -->
+        <div id="category-form-sheet" class="bottom-sheet" style="padding-bottom: 30px;">
+            <div class="sheet-header">
+                <h2 id="category-form-title">Створити категорію</h2>
+                <button id="close-category-form-sheet" class="icon-btn">✖</button>
+            </div>
+            <form id="category-form" style="display: flex; flex-direction: column; gap: 16px;">
+                <input type="hidden" id="category-id">
+                <div class="form-group">
+                    <label>Назва категорії</label>
+                    <input type="text" id="category-name" required placeholder="Впишіть категорію..." autocomplete="off">
+                </div>
+                <div class="form-row" style="gap: 12px;">
+                    <div class="form-group" style="flex: 0 0 80px;">
+                        <label>Емодзі</label>
+                        <input type="text" id="category-emoji" placeholder="📁" maxlength="2" style="text-align: center; font-size: 20px;">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Колір</label>
+                        <div class="category-color-picker" id="category-color-picker">
+                            <!-- JS will inject color options -->
+                        </div>
+                        <input type="hidden" id="category-color-value" value="#b388ff">
+                    </div>
+                </div>
+                <div class="form-row" style="gap: 12px; margin-top: 8px;">
+                    <button type="submit" class="primary-btn" style="flex: 1;">Зберегти категорію</button>
+                    <button type="button" id="category-cancel-btn" class="danger-btn" style="display: none; flex: 1; background: rgba(255,255,255,0.05); border-color: var(--border-color); color: var(--text-primary);">Скасувати</button>
+                </div>
+            </form>
+        </div>
+
         <!-- Sheet: Habit Form -->
         <div id="habit-sheet" class="bottom-sheet">
             <div class="sheet-header">
@@ -409,7 +504,7 @@
                 <input type="hidden" id="habit-id">
                 <div class="form-group">
                     <label>Назва</label>
-                    <input type="text" id="habit-title" required placeholder="Наприклад: Тренування" autocomplete="off">
+                    <input type="text" id="habit-title" required placeholder="Впишіть звичку..." autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label>Емодзі</label>
