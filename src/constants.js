@@ -1,6 +1,6 @@
 const CONFIG = {
     DB_NAME: 'todo_app',
-    DB_VERSION: 5,
+    DB_VERSION: 6,
     CATEGORIES: {
         ALL: 'all',
         WORK: 'work',

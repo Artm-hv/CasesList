@@ -18,19 +18,33 @@ const Utils = {
      */
     formatDateTime: (dateStr) => {
         if (!dateStr) return '';
-        const d = new Date(dateStr);
+        const isAllDay = !dateStr.includes('T');
+        let d;
+        if (isAllDay) {
+            const [y, m, day] = dateStr.split('-').map(Number);
+            d = new Date(y, m - 1, day);
+        } else {
+            d = new Date(dateStr);
+        }
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
         const taskDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
-        const time = d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+        const time = isAllDay ? '' : d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
         
         if (taskDate.getTime() === today.getTime()) {
-            return `Сьогодні, ${time}`;
+            return isAllDay ? 'Сьогодні' : `Сьогодні, ${time}`;
         } else if (taskDate.getTime() === tomorrow.getTime()) {
-            return `Завтра, ${time}`;
+            return isAllDay ? 'Завтра' : `Завтра, ${time}`;
+        }
+
+        if (isAllDay) {
+            return d.toLocaleString('uk-UA', {
+                month: 'short',
+                day: 'numeric'
+            });
         }
 
         return d.toLocaleString('uk-UA', {

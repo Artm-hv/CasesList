@@ -13,10 +13,18 @@ const DB = {
             if (!db.objectStoreNames.contains('habits')) {
                 db.createObjectStore('habits', { keyPath: 'id' });
             }
+            if (!db.objectStoreNames.contains('categories')) {
+                db.createObjectStore('categories', { keyPath: 'id' });
+            }
         };
 
-        request.onsuccess = (e) => {
+        request.onsuccess = async (e) => {
             DB.instance = e.target.result;
+            try {
+                await DB.initDefaultCategories();
+            } catch (err) {
+                console.error('Failed to initialize default categories', err);
+            }
             resolve(DB.instance);
         };
 
@@ -63,5 +71,57 @@ const DB = {
         }
 
         transaction.onerror = (e) => reject(e.target.error);
+    }),
+
+    /**
+     * General query for categories
+     */
+    categories: (mode, method, data = null) => new Promise((resolve, reject) => {
+        if (!DB.instance) return reject('DB not initialized');
+        
+        const transaction = DB.instance.transaction(['categories'], mode);
+        const store = transaction.objectStore('categories');
+        const request = data ? store[method](data) : store[method]();
+
+        request.onsuccess = () => {
+            if (mode === 'readonly') resolve(request.result);
+        };
+
+        if (mode === 'readwrite') {
+            transaction.oncomplete = () => resolve(request.result);
+        }
+
+        transaction.onerror = (e) => reject(e.target.error);
+    }),
+
+    /**
+     * Initialize default categories if none exist
+     */
+    initDefaultCategories: () => new Promise((resolve, reject) => {
+        if (!DB.instance) return reject('DB not initialized');
+        
+        const transaction = DB.instance.transaction(['categories'], 'readonly');
+        const store = transaction.objectStore('categories');
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+            const list = request.result;
+            if (!list || list.length === 0) {
+                const defaults = [
+                    { id: 'work', name: 'Навчання', color: '#ffb74d', emoji: '📚', order: 1000 },
+                    { id: 'home', name: 'Дім', color: '#69f0ae', emoji: '🏠', order: 2000 },
+                    { id: 'personal', name: 'Особисте', color: '#64b5f6', emoji: '👤', order: 3000 }
+                ];
+                
+                const writeTx = DB.instance.transaction(['categories'], 'readwrite');
+                const writeStore = writeTx.objectStore('categories');
+                defaults.forEach(c => writeStore.put(c));
+                writeTx.oncomplete = () => resolve();
+                writeTx.onerror = (err) => reject(err.target.error);
+            } else {
+                resolve();
+            }
+        };
+        request.onerror = (err) => reject(err.target.error);
     })
 };
