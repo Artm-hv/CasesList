@@ -1,5 +1,7 @@
-import { kv } from '@vercel/kv';
+import Redis from 'ioredis';
 import webpush from 'web-push';
+
+const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
 export default async function handler(req, res) {
   // Check authorization header for Vercel Cron
@@ -20,24 +22,30 @@ export default async function handler(req, res) {
   );
 
   try {
+    if (!redis) {
+      return res.status(500).json({ error: 'Redis is not configured' });
+    }
+
     const now = new Date();
     const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
     const nowMinutesStr = localNow.toISOString().slice(0, 16); // e.g. "2026-08-14T23:42"
 
-    // 1. Get all reminders from KV
-    // Since Vercel KV doesn't have a simple "getAll" that returns values, 
-    // we use SCAN to get all keys starting with 'rem:'
-    let cursor = 0;
+    // 1. Get all reminders from Redis using SCAN
+    let cursor = '0';
     const allReminders = [];
     do {
-      const [nextCursor, keys] = await kv.scan(cursor, { match: 'rem:*', count: 100 });
+      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'rem:*', 'COUNT', 100);
       cursor = nextCursor;
       
       if (keys.length > 0) {
-        const values = await kv.mget(...keys);
-        allReminders.push(...values.filter(Boolean));
+        const values = await redis.mget(...keys);
+        for (const val of values) {
+          if (val) {
+            allReminders.push(JSON.parse(val));
+          }
+        }
       }
-    } while (cursor !== 0);
+    } while (cursor !== '0');
 
     let sentCount = 0;
 
@@ -45,7 +53,8 @@ export default async function handler(req, res) {
     for (const reminder of allReminders) {
       if (reminder.dueDate <= nowMinutesStr) {
         // Due! Let's get the subscription
-        const subscription = await kv.get(`sub:${reminder.subId}`);
+        const subStr = await redis.get(`sub:${reminder.subId}`);
+        const subscription = subStr ? JSON.parse(subStr) : null;
         
         if (subscription) {
           try {
@@ -61,19 +70,19 @@ export default async function handler(req, res) {
             sentCount++;
             
             // Delete the reminder after successful send
-            await kv.del(`rem:${reminder.taskId}`);
+            await redis.del(`rem:${reminder.taskId}`);
             
           } catch (pushErr) {
             console.error(`Failed to send push for task ${reminder.taskId}:`, pushErr);
             // If subscription is invalid (e.g. 410 Gone), we should delete it and the reminder
             if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
-              await kv.del(`sub:${reminder.subId}`);
-              await kv.del(`rem:${reminder.taskId}`);
+              await redis.del(`sub:${reminder.subId}`);
+              await redis.del(`rem:${reminder.taskId}`);
             }
           }
         } else {
           // No subscription found for this reminder, delete it
-          await kv.del(`rem:${reminder.taskId}`);
+          await redis.del(`rem:${reminder.taskId}`);
         }
       }
     }

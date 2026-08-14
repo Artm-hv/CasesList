@@ -1,4 +1,6 @@
-import { kv } from '@vercel/kv';
+import Redis from 'ioredis';
+
+const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
 export default async function handler(req, res) {
   // CORS
@@ -29,7 +31,9 @@ export default async function handler(req, res) {
       };
 
       // Store reminder using task ID
-      await kv.set(`rem:${taskId}`, reminder);
+      if (redis) {
+        await redis.set(`rem:${taskId}`, JSON.stringify(reminder));
+      }
 
       return res.status(200).json({ success: true });
     } 
@@ -41,7 +45,9 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing taskId' });
       }
 
-      await kv.del(`rem:${taskId}`);
+      if (redis) {
+        await redis.del(`rem:${taskId}`);
+      }
       return res.status(200).json({ success: true });
     }
 

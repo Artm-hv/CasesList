@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Push notification backend for CasesList",
   "dependencies": {
-    "@vercel/kv": "^3.0.0",
+    "ioredis": "^5.3.2",
     "web-push": "^3.6.7"
   }
 }

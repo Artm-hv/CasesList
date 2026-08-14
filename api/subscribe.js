@@ -1,4 +1,6 @@
-import { kv } from '@vercel/kv';
+import Redis from 'ioredis';
+
+const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
 
 export default async function handler(req, res) {
   // CORS setup
@@ -25,8 +27,10 @@ export default async function handler(req, res) {
     // We can use the endpoint as a unique ID for the subscription
     const subId = Buffer.from(subscription.endpoint).toString('base64').substring(0, 32);
     
-    // Store in KV
-    await kv.set(`sub:${subId}`, subscription);
+    // Store in Redis
+    if (redis) {
+      await redis.set(`sub:${subId}`, JSON.stringify(subscription));
+    }
 
     return res.status(200).json({ success: true, subId });
   } catch (error) {
