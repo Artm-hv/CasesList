@@ -438,6 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         await DB.query('readwrite', 'put', task);
+        notifySW('TASKS_CHANGED');
         renderList();
         renderCalendar();
     };
@@ -917,10 +918,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ================= NOTIFICATIONS SYSTEM =================
 
+    /**
+     * Notify Service Worker about changes so it can re-check timers
+     */
+    const notifySW = (type) => {
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ type });
+        }
+    };
+
     const initNotifications = () => {
         if (!UI.settings.notificationsToggle) return;
 
-        if (typeof Notification === 'undefined') {
+        if (typeof Notification === 'undefined' || !('serviceWorker' in navigator)) {
             UI.settings.notificationsToggle.disabled = true;
             UI.settings.notificationsToggle.checked = false;
             const desc = UI.settings.notificationsToggle.closest('.settings-item')?.querySelector('.settings-item-desc');
@@ -940,6 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (permission === 'granted') {
                         localStorage.setItem('notifications_enabled', 'true');
                         UI.settings.notificationsToggle.checked = true;
+                        notifySW('NOTIFICATIONS_ENABLED');
                     } else {
                         localStorage.setItem('notifications_enabled', 'false');
                         UI.settings.notificationsToggle.checked = false;
@@ -947,6 +958,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } else if (Notification.permission === 'granted') {
                     localStorage.setItem('notifications_enabled', 'true');
+                    notifySW('NOTIFICATIONS_ENABLED');
                 } else {
                     localStorage.setItem('notifications_enabled', 'false');
                     UI.settings.notificationsToggle.checked = false;
@@ -954,9 +966,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 localStorage.setItem('notifications_enabled', 'false');
+                notifySW('NOTIFICATIONS_DISABLED');
             }
         });
 
+        // Fallback: also check from main thread when tab is open
         setInterval(checkReminders, 30000);
         checkReminders();
     };
@@ -979,9 +993,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     dbChanged = true;
 
                     try {
-                        new Notification(task.title, {
+                        // Use SW showNotification for persistent Chrome notifications
+                        const reg = await navigator.serviceWorker.ready;
+                        await reg.showNotification(task.title, {
                             body: task.description || 'Час виконати завдання!',
-                            icon: 'assets/apple-touch-icon.png'
+                            icon: 'assets/apple-touch-icon.png',
+                            badge: 'assets/icon-192.png',
+                            tag: `task-${task.id}`,
+                            data: { taskId: task.id },
+                            requireInteraction: true,
+                            vibrate: [200, 100, 200]
                         });
                         AudioSystem.play();
                     } catch (e) {
@@ -1092,6 +1113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         await DB.query('readwrite', 'put', task);
+        notifySW('TASKS_CHANGED');
         closeAllModals();
         renderList();
         renderCalendar();
@@ -1291,6 +1313,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             await DB.query('readwrite', 'put', task);
+            notifySW('TASKS_CHANGED');
             renderList();
             renderCalendar();
         });
@@ -1368,6 +1391,7 @@ document.addEventListener('DOMContentLoaded', () => {
             li.classList.add('deleting');
             setTimeout(async () => {
                 await DB.query('readwrite', 'delete', task.id);
+                notifySW('TASKS_CHANGED');
                 renderList();
                 renderCalendar();
             }, 300);
@@ -2154,6 +2178,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // BOOTSTRAP
+    // Register Service Worker for background notifications
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').then((reg) => {
+            console.log('[App] Service Worker registered, scope:', reg.scope);
+            // When SW activates, tell it current notification state
+            const isEnabled = localStorage.getItem('notifications_enabled') === 'true';
+            if (reg.active) {
+                reg.active.postMessage({ type: isEnabled ? 'NOTIFICATIONS_ENABLED' : 'NOTIFICATIONS_DISABLED' });
+            }
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (navigator.serviceWorker.controller) {
+                    const enabled = localStorage.getItem('notifications_enabled') === 'true';
+                    navigator.serviceWorker.controller.postMessage({ type: enabled ? 'NOTIFICATIONS_ENABLED' : 'NOTIFICATIONS_DISABLED' });
+                }
+            });
+        }).catch((err) => {
+            console.warn('[App] Service Worker registration failed:', err);
+        });
+    }
+
     DB.init().then(async () => {
         await loadCategories();
         renderCategoryTabs();
