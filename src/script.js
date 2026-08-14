@@ -438,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         await DB.query('readwrite', 'put', task);
-        notifySW('TASKS_CHANGED');
+        syncReminderToBackend(task);
         renderList();
         renderCalendar();
     };
@@ -918,12 +918,91 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ================= NOTIFICATIONS SYSTEM =================
 
+    const VAPID_PUBLIC_KEY = 'BHBe-YRqDi2cQaoqkpZAqf9hNSgRgGS3AeI6scvchU6OED4MEoxVrelcl9KFgsnTRPnIV7XHIAuCZZl6TKmswOQ';
+
+    function urlB64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    let currentSubId = localStorage.getItem('push_sub_id') || null;
+
     /**
-     * Notify Service Worker about changes so it can re-check timers
+     * Subscribe to Web Push and send to backend
      */
-    const notifySW = (type) => {
-        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ type });
+    async function subscribeUserToPush() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+        
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
+            
+            // Send subscription to backend
+            const res = await fetch('/api/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subscription: sub })
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                currentSubId = data.subId;
+                localStorage.setItem('push_sub_id', currentSubId);
+                return true;
+            }
+        } catch (e) {
+            console.error('Failed to subscribe to push', e);
+        }
+        return false;
+    }
+
+    /**
+     * Sync task with backend reminder API
+     */
+    const syncReminderToBackend = async (task, isDelete = false) => {
+        if (!currentSubId) return; // Not subscribed
+        
+        try {
+            if (isDelete || task.completed || !task.dueDate) {
+                // Delete reminder
+                await fetch(`/api/reminder?taskId=${task.id}`, { method: 'DELETE' });
+            } else {
+                // Add/Update reminder
+                await fetch('/api/reminder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        taskId: task.id,
+                        title: task.title,
+                        body: task.description || 'Час виконати завдання!',
+                        dueDate: task.dueDate,
+                        subId: currentSubId
+                    })
+                });
+            }
+        } catch (e) {
+            console.error('Failed to sync reminder', e);
+        }
+    };
+
+    /**
+     * Update all tasks to backend (used on initial subscribe)
+     */
+    const syncAllReminders = async () => {
+        const tasks = await DB.query('readonly', 'getAll');
+        for (const task of tasks) {
+            if (!task.completed && task.dueDate) {
+                await syncReminderToBackend(task);
+            }
         }
     };
 
@@ -948,17 +1027,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (Notification.permission === 'default') {
                     const permission = await Notification.requestPermission();
                     if (permission === 'granted') {
-                        localStorage.setItem('notifications_enabled', 'true');
-                        UI.settings.notificationsToggle.checked = true;
-                        notifySW('NOTIFICATIONS_ENABLED');
+                        const success = await subscribeUserToPush();
+                        if (success) {
+                            localStorage.setItem('notifications_enabled', 'true');
+                            UI.settings.notificationsToggle.checked = true;
+                            await syncAllReminders();
+                        } else {
+                            UI.settings.notificationsToggle.checked = false;
+                            alert('Помилка підписки на push-сповіщення.');
+                        }
                     } else {
                         localStorage.setItem('notifications_enabled', 'false');
                         UI.settings.notificationsToggle.checked = false;
                         alert('Будь ласка, дозвольте сповіщення у налаштуваннях вашого браузера.');
                     }
                 } else if (Notification.permission === 'granted') {
-                    localStorage.setItem('notifications_enabled', 'true');
-                    notifySW('NOTIFICATIONS_ENABLED');
+                    const success = await subscribeUserToPush();
+                    if (success) {
+                        localStorage.setItem('notifications_enabled', 'true');
+                        await syncAllReminders();
+                    } else {
+                        UI.settings.notificationsToggle.checked = false;
+                        alert('Помилка підписки на push-сповіщення.');
+                    }
                 } else {
                     localStorage.setItem('notifications_enabled', 'false');
                     UI.settings.notificationsToggle.checked = false;
@@ -966,55 +1057,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 localStorage.setItem('notifications_enabled', 'false');
-                notifySW('NOTIFICATIONS_DISABLED');
             }
         });
-
-        // Fallback: also check from main thread when tab is open
-        setInterval(checkReminders, 30000);
-        checkReminders();
-    };
-
-    const checkReminders = async () => {
-        if (typeof Notification === 'undefined' || localStorage.getItem('notifications_enabled') !== 'true' || Notification.permission !== 'granted') return;
-
-        const tasks = await DB.query('readonly', 'getAll');
-        const now = new Date();
-        const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-        const nowMinutesStr = localNow.toISOString().slice(0, 16);
-        
-        let dbChanged = false;
-
-        for (let task of tasks) {
-            if (!task.completed && task.dueDate && task.dueDate.includes('T')) {
-                if (task.dueDate <= nowMinutesStr && !task.notified) {
-                    task.notified = true;
-                    await DB.query('readwrite', 'put', task);
-                    dbChanged = true;
-
-                    try {
-                        // Use SW showNotification for persistent Chrome notifications
-                        const reg = await navigator.serviceWorker.ready;
-                        await reg.showNotification(task.title, {
-                            body: task.description || 'Час виконати завдання!',
-                            icon: 'assets/apple-touch-icon.png',
-                            badge: 'assets/icon-192.png',
-                            tag: `task-${task.id}`,
-                            data: { taskId: task.id },
-                            requireInteraction: true,
-                            vibrate: [200, 100, 200]
-                        });
-                        AudioSystem.play();
-                    } catch (e) {
-                        console.error('Failed to trigger notification', e);
-                    }
-                }
-            }
-        }
-
-        if (dbChanged) {
-            renderList();
-        }
     };
 
     document.getElementById('close-sheet').addEventListener('click', closeAllModals);
@@ -1113,7 +1157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         await DB.query('readwrite', 'put', task);
-        notifySW('TASKS_CHANGED');
+        syncReminderToBackend(task);
         closeAllModals();
         renderList();
         renderCalendar();
@@ -1313,7 +1357,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             await DB.query('readwrite', 'put', task);
-            notifySW('TASKS_CHANGED');
+            syncReminderToBackend(task);
             renderList();
             renderCalendar();
         });
@@ -1391,7 +1435,7 @@ document.addEventListener('DOMContentLoaded', () => {
             li.classList.add('deleting');
             setTimeout(async () => {
                 await DB.query('readwrite', 'delete', task.id);
-                notifySW('TASKS_CHANGED');
+                syncReminderToBackend(task, true);
                 renderList();
                 renderCalendar();
             }, 300);
@@ -2182,17 +2226,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').then((reg) => {
             console.log('[App] Service Worker registered, scope:', reg.scope);
-            // When SW activates, tell it current notification state
-            const isEnabled = localStorage.getItem('notifications_enabled') === 'true';
-            if (reg.active) {
-                reg.active.postMessage({ type: isEnabled ? 'NOTIFICATIONS_ENABLED' : 'NOTIFICATIONS_DISABLED' });
-            }
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (navigator.serviceWorker.controller) {
-                    const enabled = localStorage.getItem('notifications_enabled') === 'true';
-                    navigator.serviceWorker.controller.postMessage({ type: enabled ? 'NOTIFICATIONS_ENABLED' : 'NOTIFICATIONS_DISABLED' });
-                }
-            });
         }).catch((err) => {
             console.warn('[App] Service Worker registration failed:', err);
         });

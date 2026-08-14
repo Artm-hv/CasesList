@@ -54,93 +54,32 @@ function markTaskNotified(db, task) {
     });
 }
 
-// ================= Notification Check =================
+// ================= Push Notification Handling =================
 
-async function checkReminders() {
-    if (!notificationsEnabled) return;
-
-    try {
-        const db = await openDB();
-        const tasks = await getAllTasks(db);
-        const now = new Date();
-        const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-        const nowMinutesStr = localNow.toISOString().slice(0, 16);
-
-        for (const task of tasks) {
-            if (!task.completed && task.dueDate && task.dueDate.includes('T')) {
-                if (task.dueDate <= nowMinutesStr && !task.notified) {
-                    await markTaskNotified(db, task);
-
-                    await self.registration.showNotification(task.title, {
-                        body: task.description || 'Час виконати завдання!',
-                        icon: 'assets/apple-touch-icon.png',
-                        badge: 'assets/icon-192.png',
-                        tag: `task-${task.id}`,
-                        data: { taskId: task.id },
-                        requireInteraction: true,
-                        vibrate: [200, 100, 200]
-                    });
-                }
-            }
+self.addEventListener('push', (event) => {
+    let data = {};
+    if (event.data) {
+        try {
+            data = event.data.json();
+        } catch (e) {
+            data = { title: event.data.text() };
         }
-
-        db.close();
-    } catch (e) {
-        console.error('[SW] checkReminders error:', e);
     }
-}
 
-function startCheckTimer() {
-    if (checkTimer) clearInterval(checkTimer);
-    checkTimer = setInterval(() => {
-        checkReminders();
-    }, CHECK_INTERVAL);
-    // Also check immediately
-    checkReminders();
-}
+    const title = data.title || 'Нове нагадування!';
+    const options = {
+        body: data.body || 'Час виконати завдання!',
+        icon: 'assets/apple-touch-icon.png',
+        badge: 'assets/icon-192.png',
+        tag: data.taskId ? `task-${data.taskId}` : 'general',
+        data: { taskId: data.taskId },
+        requireInteraction: true,
+        vibrate: [200, 100, 200]
+    };
 
-// ================= SW Lifecycle =================
-
-self.addEventListener('install', (event) => {
-    self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
     event.waitUntil(
-        clients.claim().then(() => {
-            startCheckTimer();
-        })
+        self.registration.showNotification(title, options)
     );
-});
-
-// ================= Messages from main thread =================
-
-self.addEventListener('message', (event) => {
-    const { type } = event.data || {};
-
-    switch (type) {
-        case 'NOTIFICATIONS_ENABLED':
-            notificationsEnabled = true;
-            startCheckTimer();
-            break;
-
-        case 'NOTIFICATIONS_DISABLED':
-            notificationsEnabled = false;
-            if (checkTimer) {
-                clearInterval(checkTimer);
-                checkTimer = null;
-            }
-            break;
-
-        case 'TASKS_CHANGED':
-            // Task was added/edited/deleted — re-check immediately
-            checkReminders();
-            break;
-
-        case 'CHECK_NOW':
-            checkReminders();
-            break;
-    }
 });
 
 // ================= Notification Click =================

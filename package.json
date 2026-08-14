@@ -1,0 +1,9 @@
+{
+  "name": "caseslist-backend",
+  "version": "1.0.0",
+  "description": "Push notification backend for CasesList",
+  "dependencies": {
+    "@vercel/kv": "^3.0.0",
+    "web-push": "^3.6.7"
+  }
+}
