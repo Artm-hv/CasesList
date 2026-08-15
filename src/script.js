@@ -976,6 +976,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Delete reminder
                 await fetch(`/api/reminder?taskId=${task.id}`, { method: 'DELETE' });
             } else {
+                // Convert local dueDate to UTC string for backend comparison
+                let utcDueDate = task.dueDate;
+                if (task.dueDate && task.dueDate.includes('T')) {
+                    const dateObj = new Date(task.dueDate);
+                    if (!isNaN(dateObj.getTime())) {
+                        utcDueDate = dateObj.toISOString().slice(0, 16);
+                    }
+                }
+
                 // Add/Update reminder
                 await fetch('/api/reminder', {
                     method: 'POST',
@@ -983,8 +992,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         taskId: task.id,
                         title: task.title,
-                        body: task.description || 'Час виконати завдання!',
-                        dueDate: task.dueDate,
+                        body: task.description || 'Настав час виконання задачі!',
+                        dueDate: utcDueDate,
                         subId: currentSubId
                     })
                 });
