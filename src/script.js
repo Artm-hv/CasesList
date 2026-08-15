@@ -2278,7 +2278,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Цей час вже минув!');
                 return;
             }
-            absoluteTime = new Date(triggerTime - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            absoluteTime = new Date(triggerTime).toISOString().slice(0, 16);
         } else {
             if (!absoluteTime) return;
             const triggerTime = new Date(absoluteTime).getTime();
@@ -2286,7 +2286,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Вибраний час вже минув!');
                 return;
             }
-            absoluteTime = new Date(triggerTime - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            absoluteTime = new Date(triggerTime).toISOString().slice(0, 16);
         }
 
         task.notifications.push({
