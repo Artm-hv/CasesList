@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=2">
     <link rel="icon" href="assets/apple-touch-icon.png">
-    <link rel="stylesheet" href="src/style.css?v=8">
+    <link rel="stylesheet" href="src/style.css?v=15">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -525,6 +525,28 @@
                 </div>
             </form>
         </div>
+        <div id="notifications-sheet" class="bottom-sheet" style="padding-bottom: 30px;">
+            <div class="sheet-header">
+                <h2 id="notif-sheet-title">Сповіщення</h2>
+                <button id="close-notif-sheet" class="icon-btn">✖</button>
+            </div>
+            <div class="form-scroll-body">
+                <div id="notif-list-container" class="notif-list">
+                    <!-- Notifications will be rendered here -->
+                </div>
+                <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">Додати нове:</div>
+                <div class="notif-chips">
+                    <button class="notif-chip" data-notif-type="0">В момент дедлайну</button>
+                    <button class="notif-chip" data-notif-type="5">За 5 хв</button>
+                    <button class="notif-chip" data-notif-type="15">За 15 хв</button>
+                    <button class="notif-chip" data-notif-type="60">За 1 годину</button>
+                </div>
+                <div class="notif-custom" style="display: flex; gap: 8px;">
+                    <input type="datetime-local" id="notif-custom-time" class="form-group" style="margin-bottom: 0; flex: 1; padding: 12px; border-radius: 12px; background: var(--surface-light); border: 1px solid var(--border-color); color: var(--text-primary);">
+                    <button id="add-custom-notif-btn" class="secondary-btn" style="width: auto;">Додати</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Custom Confirm Dialog -->
         <div id="custom-confirm" class="custom-confirm">
@@ -541,7 +563,7 @@
     <script src="src/constants.js?v=6"></script>
     <script src="src/utils.js?v=6"></script>
     <script src="src/db.js?v=6"></script>
-    <script src="src/script.js?v=14"></script>
+    <script src="src/script.js?v=15"></script>
 </body>
 
 </html>

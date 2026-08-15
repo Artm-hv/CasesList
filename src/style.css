@@ -271,14 +271,18 @@ header p {
 
 .tabs-container {
    margin-top: 4px;
+   overflow: hidden;
 }
 
 .tabs {
    display: flex;
    gap: 16px;
    overflow-x: auto;
+   overflow-y: hidden;
    scrollbar-width: none;
    border-bottom: 1px solid var(--border-color);
+   touch-action: pan-x;
+   white-space: nowrap;
 }
 
 .tabs::-webkit-scrollbar {
@@ -2027,4 +2031,52 @@ input:checked + .slider:before {
     flex-wrap: wrap;
     align-items: center;
     margin-top: 4px;
-}
+}/* Notifications UI */
+.notif-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.notif-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface-light);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+}
+.notif-item .remove-notif-btn {
+    background: none;
+    border: none;
+    color: var(--danger-color);
+    cursor: pointer;
+    padding: 4px;
+}
+.notif-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.notif-chip {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.notif-chip:active {
+    background: rgba(255, 255, 255, 0.1);
+}
+.notif-custom {
+    display: flex;
+    gap: 8px;
+}
+.notif-custom input {
+    flex: 1;
+}

@@ -27,8 +27,8 @@ export default async function handler(req, res) {
     }
 
     const now = new Date();
-    const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-    const nowMinutesStr = localNow.toISOString().slice(0, 16); // e.g. "2026-08-14T23:42"
+    // Vercel server runs in UTC, so we just use ISO string directly
+    const nowMinutesStr = now.toISOString().slice(0, 16); 
 
     // 1. Get all reminders from Redis using SCAN
     let cursor = '0';
@@ -51,38 +51,63 @@ export default async function handler(req, res) {
 
     // 2. Check which ones are due
     for (const reminder of allReminders) {
-      if (reminder.dueDate <= nowMinutesStr) {
-        // Due! Let's get the subscription
-        const subStr = await redis.get(`sub:${reminder.subId}`);
-        const subscription = subStr ? JSON.parse(subStr) : null;
-        
-        if (subscription) {
-          try {
-            // Send push notification
-            await webpush.sendNotification(
-              subscription,
-              JSON.stringify({
-                title: reminder.title,
-                body: reminder.body,
-                taskId: reminder.taskId
-              })
-            );
-            sentCount++;
-            
-            // Delete the reminder after successful send
-            await redis.del(`rem:${reminder.taskId}`);
-            
-          } catch (pushErr) {
-            console.error(`Failed to send push for task ${reminder.taskId}:`, pushErr);
-            // If subscription is invalid (e.g. 410 Gone), we should delete it and the reminder
-            if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
-              await redis.del(`sub:${reminder.subId}`);
-              await redis.del(`rem:${reminder.taskId}`);
+      if (!reminder.notifications || reminder.notifications.length === 0) {
+        await redis.del(`rem:${reminder.taskId}`);
+        continue;
+      }
+
+      let modified = false;
+      let subscription = null;
+      let subFetchAttempted = false;
+
+      // Iterate backwards to safely remove triggered notifications
+      for (let i = reminder.notifications.length - 1; i >= 0; i--) {
+        const notif = reminder.notifications[i];
+        if (notif.absoluteTime <= nowMinutesStr) {
+          // Due!
+          if (!subFetchAttempted) {
+            const subStr = await redis.get(`sub:${reminder.subId}`);
+            subscription = subStr ? JSON.parse(subStr) : null;
+            subFetchAttempted = true;
+          }
+
+          if (subscription) {
+            try {
+              let bodyText = reminder.body || 'Настав час виконання задачі!';
+              if (notif.type === 'relative' && notif.offsetMinutes > 0) {
+                  bodyText = `Завдання почнеться через ${notif.offsetMinutes} хвилин.`;
+              }
+              await webpush.sendNotification(
+                subscription,
+                JSON.stringify({
+                  title: reminder.title,
+                  body: bodyText,
+                  taskId: reminder.taskId
+                })
+              );
+              sentCount++;
+            } catch (pushErr) {
+              console.error(`Failed to send push for task ${reminder.taskId}:`, pushErr);
+              if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
+                await redis.del(`sub:${reminder.subId}`);
+                subscription = null; 
+              }
             }
           }
-        } else {
-          // No subscription found for this reminder, delete it
+
+          // Remove triggered notification from the list
+          reminder.notifications.splice(i, 1);
+          modified = true;
+        }
+      }
+
+      if (modified) {
+        if (reminder.notifications.length === 0 || (!subscription && subFetchAttempted)) {
+          // No more notifications left, or subscription is invalid
           await redis.del(`rem:${reminder.taskId}`);
+        } else {
+          // Save the remaining notifications back to Redis
+          await redis.set(`rem:${reminder.taskId}`, JSON.stringify(reminder));
         }
       }
     }

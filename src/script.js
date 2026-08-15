@@ -972,19 +972,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentSubId) return; // Not subscribed
         
         try {
-            if (isDelete || task.completed || !task.dueDate) {
+            if (isDelete || task.completed || !task.notifications || task.notifications.length === 0) {
                 // Delete reminder
                 await fetch(`/api/reminder?taskId=${task.id}`, { method: 'DELETE' });
             } else {
-                // Convert local dueDate to UTC string for backend comparison
-                let utcDueDate = task.dueDate;
-                if (task.dueDate && task.dueDate.includes('T')) {
-                    const dateObj = new Date(task.dueDate);
-                    if (!isNaN(dateObj.getTime())) {
-                        utcDueDate = dateObj.toISOString().slice(0, 16);
-                    }
-                }
-
                 // Add/Update reminder
                 await fetch('/api/reminder', {
                     method: 'POST',
@@ -993,7 +984,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         taskId: task.id,
                         title: task.title,
                         body: task.description || 'Настав час виконання задачі!',
-                        dueDate: utcDueDate,
+                        notifications: task.notifications,
                         subId: currentSubId
                     })
                 });
@@ -1235,6 +1226,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            if (task.dueDate) {
+                const dateStr = task.dueDate.split('T')[0];
+                if (dateStr > todayStr) return; // Hide future tasks from the active list
+            }
+
             if (state.search && !task.title.toLowerCase().includes(state.search) && !(task.description && task.description.toLowerCase().includes(state.search))) return;
             if (state.category !== CONFIG.CATEGORIES.ALL && task.categoryId !== state.category) return;
 
@@ -1312,7 +1308,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${renderSubtasksInline(task)}
             </div>
             <div class="task-actions">
-                ${!task.completed && task.dueDate ? `<button class="icon-btn bell-btn" aria-label="Нагадування"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>` : ''}
+                ${!task.completed ? `<button class="icon-btn bell-btn" aria-label="Сповіщення"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="${(task.notifications && task.notifications.length > 0) ? 'var(--primary-color)' : 'currentColor'}" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>` : ''}
                 <button class="icon-btn edit-btn" aria-label="Edit"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
                 <button class="icon-btn delete-btn" aria-label="Delete"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
             </div>
@@ -1385,57 +1381,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        if (!task.completed && task.dueDate) {
-            li.querySelector('.bell-btn').addEventListener('click', () => {
-                const title = task.title;
-                const desc = task.description || '';
-                const isAllDay = !task.dueDate.includes('T');
-
-                let start, end;
-                if (isAllDay) {
-                    const [y, m, day] = task.dueDate.split('-').map(Number);
-                    start = new Date(y, m - 1, day);
-                    end = new Date(y, m - 1, day + 1);
-                } else {
-                    start = new Date(task.dueDate);
-                    end = new Date(start.getTime() + 30 * 60 * 1000); // 30 mins
-                }
-
-                const formatICSDate = (d) => {
-                    return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-                };
-                const formatICSAllDayDate = (d) => {
-                    const year = d.getFullYear();
-                    const month = (d.getMonth() + 1).toString().padStart(2, '0');
-                    const day = d.getDate().toString().padStart(2, '0');
-                    return `${year}${month}${day}`;
-                };
-
-                const icsContent = [
-                    'BEGIN:VCALENDAR',
-                    'VERSION:2.0',
-                    'PRODID:-//CasesList//Task Calendar//EN',
-                    'BEGIN:VEVENT',
-                    `UID:${task.id}@caseslist.app`,
-                    `DTSTAMP:${formatICSDate(new Date())}`,
-                    isAllDay ? `DTSTART;VALUE=DATE:${formatICSAllDayDate(start)}` : `DTSTART:${formatICSDate(start)}`,
-                    isAllDay ? `DTEND;VALUE=DATE:${formatICSAllDayDate(end)}` : `DTEND:${formatICSDate(end)}`,
-                    `SUMMARY:${title}`,
-                    `DESCRIPTION:${desc.replace(/\n/g, '\\n')}`,
-                    'END:VEVENT',
-                    'END:VCALENDAR'
-                ].join('\r\n');
-
-                const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.setAttribute('download', `${title.replace(/[^a-z0-9а-яєіїґ]/gi, '_')}.ics`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-            });
+        if (!task.completed) {
+            const bellBtn = li.querySelector('.bell-btn');
+            if (bellBtn) {
+                bellBtn.addEventListener('click', () => {
+                    openNotificationsSheet(task);
+                });
+            }
         }
 
         li.querySelector('.edit-btn').addEventListener('click', () => openSheet(task));
@@ -2229,6 +2181,150 @@ document.addEventListener('DOMContentLoaded', () => {
             renderHabits();
         }
     });
+
+    // ================= NOTIFICATIONS LOGIC =================
+    
+    const openNotificationsSheet = (task) => {
+        state.currentNotifTask = task;
+        if (!task.notifications) task.notifications = [];
+        renderNotificationsList();
+        const sheet = document.getElementById('notifications-sheet');
+        if (sheet) sheet.classList.add('open');
+        UI.overlay.classList.add('open');
+    };
+
+    const closeNotifSheet = () => {
+        const sheet = document.getElementById('notifications-sheet');
+        if (sheet) sheet.classList.remove('open');
+        state.currentNotifTask = null;
+        if (UI.sheet && !UI.sheet.classList.contains('open')) {
+            UI.overlay.classList.remove('open');
+        }
+    };
+
+    const renderNotificationsList = () => {
+        const container = document.getElementById('notif-list-container');
+        if (!container || !state.currentNotifTask) return;
+        container.innerHTML = '';
+        const task = state.currentNotifTask;
+        
+        if (!task.notifications || task.notifications.length === 0) {
+            container.innerHTML = '<div style="color: var(--text-secondary); font-size: 13px; text-align: center; padding: 10px;">Немає активних сповіщень</div>';
+            return;
+        }
+
+        task.notifications.forEach((notif, index) => {
+            const item = document.createElement('div');
+            item.className = 'notif-item';
+            
+            let timeStr = 'Невідомо';
+            if (notif.absoluteTime) {
+                const dateObj = new Date(notif.absoluteTime);
+                timeStr = dateObj.toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+            }
+
+            let typeLabel = '';
+            if (notif.type === 'relative') {
+                if (notif.offsetMinutes === 0) typeLabel = 'В момент дедлайну';
+                else typeLabel = `За ${notif.offsetMinutes} хв`;
+            } else {
+                typeLabel = 'Кастомний час';
+            }
+
+            item.innerHTML = `
+                <div>
+                    <div style="font-weight: 600;">${typeLabel}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">${timeStr}</div>
+                </div>
+                <button class="remove-notif-btn" data-index="${index}">✖</button>
+            `;
+            container.appendChild(item);
+        });
+
+        container.querySelectorAll('.remove-notif-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const index = parseInt(e.currentTarget.getAttribute('data-index'));
+                task.notifications.splice(index, 1);
+                await DB.query('readwrite', 'put', task);
+                syncReminderToBackend(task);
+                renderNotificationsList();
+                renderList();
+            });
+        });
+    };
+
+    const addNotification = async (type, offsetMinutes = 0, absoluteTimeStr = null) => {
+        const task = state.currentNotifTask;
+        if (!task) return;
+        if (!task.notifications) task.notifications = [];
+
+        let absoluteTime = absoluteTimeStr;
+        
+        if (type === 'relative') {
+            if (!task.dueDate) {
+                alert('Спочатку встановіть дедлайн для завдання, щоб додавати відносні сповіщення.');
+                return;
+            }
+            let baseTime;
+            if (task.dueDate.includes('T')) {
+                baseTime = new Date(task.dueDate).getTime();
+            } else {
+                // All-day event -> remind at 09:00 on that day
+                const [y, m, d] = task.dueDate.split('-').map(Number);
+                baseTime = new Date(y, m - 1, d, 9, 0, 0).getTime();
+            }
+            const triggerTime = baseTime - (offsetMinutes * 60 * 1000);
+            if (triggerTime <= Date.now()) {
+                alert('Цей час вже минув!');
+                return;
+            }
+            absoluteTime = new Date(triggerTime - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        } else {
+            if (!absoluteTime) return;
+            const triggerTime = new Date(absoluteTime).getTime();
+            if (triggerTime <= Date.now()) {
+                alert('Вибраний час вже минув!');
+                return;
+            }
+            absoluteTime = new Date(triggerTime - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        }
+
+        task.notifications.push({
+            id: 'n_' + Date.now() + Math.random().toString(36).substr(2, 5),
+            type,
+            offsetMinutes,
+            absoluteTime // Stored as UTC string
+        });
+
+        await DB.query('readwrite', 'put', task);
+        syncReminderToBackend(task);
+        renderNotificationsList();
+        renderList();
+    };
+
+    document.querySelectorAll('.notif-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => {
+            const mins = parseInt(e.currentTarget.getAttribute('data-notif-type'));
+            addNotification('relative', mins);
+        });
+    });
+
+    const addCustomNotifBtn = document.getElementById('add-custom-notif-btn');
+    if (addCustomNotifBtn) {
+        addCustomNotifBtn.addEventListener('click', () => {
+            const timeVal = document.getElementById('notif-custom-time').value;
+            if (timeVal) {
+                addNotification('absolute', 0, timeVal);
+                document.getElementById('notif-custom-time').value = '';
+            }
+        });
+    }
+
+    const closeNotifBtn = document.getElementById('close-notif-sheet');
+    if (closeNotifBtn) {
+        closeNotifBtn.addEventListener('click', closeNotifSheet);
+    }
+
 
     // BOOTSTRAP
     // Register Service Worker for background notifications

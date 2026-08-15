@@ -15,24 +15,26 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'POST') {
-      const { taskId, title, body, dueDate, subId } = req.body;
+      const { taskId, title, body, notifications, subId } = req.body;
       
-      if (!taskId || !dueDate || !subId) {
+      if (!taskId || !subId) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      const reminder = {
-        taskId,
-        title,
-        body,
-        dueDate, // ISO string '2026-08-14T23:42'
-        subId,
-        createdAt: Date.now()
-      };
-
-      // Store reminder using task ID
       if (redis) {
-        await redis.set(`rem:${taskId}`, JSON.stringify(reminder));
+        if (!notifications || notifications.length === 0) {
+            await redis.del(`rem:${taskId}`);
+        } else {
+            const reminder = {
+                taskId,
+                title,
+                body,
+                notifications, 
+                subId,
+                createdAt: Date.now()
+            };
+            await redis.set(`rem:${taskId}`, JSON.stringify(reminder));
+        }
       }
 
       return res.status(200).json({ success: true });
