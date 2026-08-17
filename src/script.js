@@ -511,6 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.categories.sheet?.classList.remove('open');
         UI.categories.formSheet?.classList.remove('open');
         UI.confirm.modal.classList.remove('open');
+        document.getElementById('notifications-sheet')?.classList.remove('open');
         UI.overlay.classList.remove('open');
     };
 
@@ -2219,7 +2220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let timeStr = 'Невідомо';
             if (notif.absoluteTime) {
-                const dateObj = new Date(notif.absoluteTime);
+                const dateObj = new Date(notif.absoluteTime + 'Z');
                 timeStr = dateObj.toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
             }
 
