@@ -68,7 +68,7 @@ self.addEventListener('push', (event) => {
 
     const title = data.title || 'Нове нагадування!';
     const options = {
-        body: data.body || 'Час виконати завдання!',
+        body: data.body || 'Дедлайн настав! Час завершити завдання.',
         icon: 'assets/apple-touch-icon.png',
         badge: 'assets/icon-192.png',
         tag: data.taskId ? `task-${data.taskId}` : 'general',

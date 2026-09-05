@@ -422,6 +422,31 @@ document.addEventListener('DOMContentLoaded', () => {
             if (sheetTitle) sheetTitle.textContent = 'Редагувати завдання';
         }
 
+        const dueDateChanged = existingTask && existingTask.dueDate !== UI.inputs.date.value;
+        let notifications = existingTask ? (existingTask.notifications || []) : [];
+
+        // Recalculate relative notifications when dueDate changes
+        if (dueDateChanged && notifications.length > 0 && UI.inputs.date.value) {
+            notifications = notifications.map(notif => {
+                if (notif.type === 'relative') {
+                    let baseTime;
+                    const newDate = UI.inputs.date.value;
+                    if (newDate.includes('T')) {
+                        baseTime = new Date(newDate).getTime();
+                    } else {
+                        const [y, m, d] = newDate.split('-').map(Number);
+                        baseTime = new Date(y, m - 1, d, 9, 0, 0).getTime();
+                    }
+                    const triggerTime = baseTime - (notif.offsetMinutes * 60 * 1000);
+                    if (triggerTime > Date.now()) {
+                        return { ...notif, absoluteTime: new Date(triggerTime).toISOString().slice(0, 16) };
+                    }
+                    return null; // Remove expired notifications
+                }
+                return notif;
+            }).filter(Boolean);
+        }
+
         const task = {
             id: id,
             title: t,
@@ -434,6 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
             subtasks: state.modalSubtasks,
             order: existingTask ? existingTask.order : Date.now(),
             notified: existingTask ? (existingTask.dueDate === UI.inputs.date.value ? existingTask.notified : false) : false,
+            notifications: notifications,
             completionDate: existingTask ? existingTask.completionDate : null
         };
 
@@ -512,6 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.categories.formSheet?.classList.remove('open');
         UI.confirm.modal.classList.remove('open');
         document.getElementById('notifications-sheet')?.classList.remove('open');
+        document.getElementById('sleep-calc-sheet')?.classList.remove('open');
         UI.overlay.classList.remove('open');
     };
 
@@ -984,7 +1011,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         taskId: task.id,
                         title: task.title,
-                        body: task.description || 'Настав час виконання задачі!',
+                        body: task.description || 'Дедлайн настав! Час завершити завдання.',
                         notifications: task.notifications,
                         subId: currentSubId
                     })
@@ -1142,6 +1169,31 @@ document.addEventListener('DOMContentLoaded', () => {
             existingTask = await DB.query('readonly', 'get', UI.inputs.id.value);
         }
 
+        const dueDateChanged = existingTask && existingTask.dueDate !== UI.inputs.date.value;
+        let notifications = existingTask ? (existingTask.notifications || []) : [];
+
+        // Recalculate relative notifications when dueDate changes
+        if (dueDateChanged && notifications.length > 0 && UI.inputs.date.value) {
+            notifications = notifications.map(notif => {
+                if (notif.type === 'relative') {
+                    let baseTime;
+                    const newDate = UI.inputs.date.value;
+                    if (newDate.includes('T')) {
+                        baseTime = new Date(newDate).getTime();
+                    } else {
+                        const [y, m, d] = newDate.split('-').map(Number);
+                        baseTime = new Date(y, m - 1, d, 9, 0, 0).getTime();
+                    }
+                    const triggerTime = baseTime - (notif.offsetMinutes * 60 * 1000);
+                    if (triggerTime > Date.now()) {
+                        return { ...notif, absoluteTime: new Date(triggerTime).toISOString().slice(0, 16) };
+                    }
+                    return null; // Remove expired notifications
+                }
+                return notif;
+            }).filter(Boolean);
+        }
+
         const task = {
             id: UI.inputs.id.value || Date.now().toString(),
             title: t,
@@ -1154,6 +1206,7 @@ document.addEventListener('DOMContentLoaded', () => {
             subtasks: state.modalSubtasks,
             order: existingTask ? existingTask.order : Date.now(),
             notified: existingTask ? (existingTask.dueDate === UI.inputs.date.value ? existingTask.notified : false) : false,
+            notifications: notifications,
             completionDate: existingTask ? existingTask.completionDate : null
         };
 
@@ -2324,6 +2377,61 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeNotifBtn = document.getElementById('close-notif-sheet');
     if (closeNotifBtn) {
         closeNotifBtn.addEventListener('click', closeNotifSheet);
+    }
+
+    // ================= SLEEP CALCULATOR =================
+
+    const openSleepCalc = () => {
+        const now = new Date();
+        const pad = (n) => n.toString().padStart(2, '0');
+
+        // Display current time
+        const currentTimeEl = document.getElementById('sleep-calc-current-time');
+        if (currentTimeEl) {
+            currentTimeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        }
+
+        // Calculate wake-up times: current + 15 min (falling asleep) + sleep duration
+        const FALL_ASLEEP_MINUTES = 15;
+        const sleepCycles = [
+            { hours: 6, id: 'sleep-time-6' },
+            { hours: 7.5, id: 'sleep-time-7' },
+            { hours: 9, id: 'sleep-time-9' }
+        ];
+
+        sleepCycles.forEach(cycle => {
+            const totalMinutes = FALL_ASLEEP_MINUTES + (cycle.hours * 60);
+            const wakeTime = new Date(now.getTime() + totalMinutes * 60 * 1000);
+            const el = document.getElementById(cycle.id);
+            if (el) {
+                el.textContent = `${pad(wakeTime.getHours())}:${pad(wakeTime.getMinutes())}`;
+            }
+        });
+
+        // Open sheet
+        const sheet = document.getElementById('sleep-calc-sheet');
+        if (sheet) {
+            sheet.classList.add('open');
+            UI.overlay.classList.add('open');
+        }
+    };
+
+    const closeSleepCalc = () => {
+        const sheet = document.getElementById('sleep-calc-sheet');
+        if (sheet) {
+            sheet.classList.remove('open');
+            UI.overlay.classList.remove('open');
+        }
+    };
+
+    const sleepCalcBtn = document.getElementById('btn-sleep-calc');
+    if (sleepCalcBtn) {
+        sleepCalcBtn.addEventListener('click', openSleepCalc);
+    }
+
+    const closeSleepCalcBtn = document.getElementById('close-sleep-calc');
+    if (closeSleepCalcBtn) {
+        closeSleepCalcBtn.addEventListener('click', closeSleepCalc);
     }
 
 

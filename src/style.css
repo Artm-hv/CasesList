@@ -2094,3 +2094,144 @@ input:checked + .slider:before {
 .notif-custom input {
     flex: 1;
 }
+
+/* --- Settings Icon: Teal --- */
+.settings-icon.teal { background: rgba(0, 188, 212, 0.1); color: #00bcd4; }
+
+/* --- SLEEP CALCULATOR --- */
+.sleep-calc-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sleep-calc-now {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    background: var(--surface-light);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.sleep-calc-now-label {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.sleep-calc-now-time {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 2px;
+}
+
+.sleep-calc-note {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: center;
+    font-weight: 500;
+}
+
+.sleep-calc-results {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sleep-result-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.sleep-result-card:active {
+    transform: scale(0.98);
+}
+
+.sleep-result-card.orange {
+    border-color: rgba(255, 183, 77, 0.3);
+    background: rgba(255, 183, 77, 0.05);
+}
+
+.sleep-result-card.purple {
+    border-color: rgba(179, 136, 255, 0.3);
+    background: rgba(179, 136, 255, 0.05);
+}
+
+.sleep-result-card.purple.recommended {
+    border-color: rgba(179, 136, 255, 0.5);
+    box-shadow: 0 0 20px rgba(179, 136, 255, 0.1);
+}
+
+.sleep-result-card.blue {
+    border-color: rgba(100, 181, 246, 0.3);
+    background: rgba(100, 181, 246, 0.05);
+}
+
+.sleep-result-emoji {
+    font-size: 28px;
+    min-width: 36px;
+    text-align: center;
+}
+
+.sleep-result-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sleep-result-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.sleep-result-time {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.sleep-result-card.orange .sleep-result-time {
+    color: #ffb74d;
+}
+
+.sleep-result-card.purple .sleep-result-time {
+    color: var(--primary-color);
+}
+
+.sleep-result-card.blue .sleep-result-time {
+    color: #64b5f6;
+}
+
+.sleep-result-badge {
+    position: absolute;
+    top: -10px;
+    right: 12px;
+    background: var(--surface-color);
+    border: 1px solid rgba(179, 136, 255, 0.4);
+    color: var(--primary-color);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 10px;
+}
+
+.sleep-calc-footer {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    opacity: 0.7;
+    margin-top: 4px;
+}

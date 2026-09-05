@@ -73,9 +73,9 @@ export default async function handler(req, res) {
 
           if (subscription) {
             try {
-              let bodyText = reminder.body || 'Настав час виконання задачі!';
+              let bodyText = reminder.body || 'Дедлайн настав! Час завершити завдання.';
               if (notif.type === 'relative' && notif.offsetMinutes > 0) {
-                  bodyText = `Завдання почнеться через ${notif.offsetMinutes} хвилин.`;
+                  bodyText = `До дедлайну залишилось ${notif.offsetMinutes} хвилин.`;
               }
               await webpush.sendNotification(
                 subscription,
