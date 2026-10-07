@@ -539,6 +539,10 @@ document.addEventListener('DOMContentLoaded', () => {
         UI.confirm.modal.classList.remove('open');
         document.getElementById('notifications-sheet')?.classList.remove('open');
         document.getElementById('sleep-calc-sheet')?.classList.remove('open');
+        document.getElementById('fin-tx-sheet')?.classList.remove('open');
+        document.getElementById('fin-budget-sheet')?.classList.remove('open');
+        document.getElementById('fin-goal-sheet')?.classList.remove('open');
+        document.getElementById('fin-deposit-sheet')?.classList.remove('open');
         UI.overlay.classList.remove('open');
     };
 

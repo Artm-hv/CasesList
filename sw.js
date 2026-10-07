@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'todo_app';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 const CHECK_INTERVAL = 30000; // 30 seconds
 
 let checkTimer = null;

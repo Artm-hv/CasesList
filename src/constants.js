@@ -1,6 +1,6 @@
 const CONFIG = {
     DB_NAME: 'todo_app',
-    DB_VERSION: 6,
+    DB_VERSION: 7,
     CATEGORIES: {
         ALL: 'all',
         WORK: 'work',
@@ -29,3 +29,4 @@ const CONFIG = {
         BACKGROUND: '#060608'
     }
 };
+

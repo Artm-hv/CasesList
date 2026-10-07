@@ -10,6 +10,7 @@
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=2">
     <link rel="icon" href="assets/apple-touch-icon.png">
     <link rel="stylesheet" href="src/style.css?v=18">
+    <link rel="stylesheet" href="src/finance.css?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -25,11 +26,18 @@
                 </div>
                 <div class="header-actions">
                     <div class="streak-badge" id="streak-badge">🔥 0</div>
-                    <button class="icon-btn" id="btn-analytics" aria-label="Аналітика">
-                        <svg viewBox="0 0 24 24" fill="var(--primary-color)">
-                            <rect x="2" y="12" width="6" height="9" rx="1.5" />
-                            <rect x="9" y="3" width="6" height="18" rx="1.5" />
-                            <rect x="16" y="8" width="6" height="13" rx="1.5" />
+                    <button class="icon-btn" id="btn-finance-toggle" title="Трекер витрат" aria-label="Трекер витрат">
+                        <svg id="icon-pie-chart" viewBox="0 0 24 24" width="22" height="22" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="var(--primary-color)" stroke-width="2" stroke-opacity="0.3" fill="none" />
+                            <path d="M12 2 A10 10 0 0 1 22 12 L12 12 Z" fill="#b388ff" />
+                            <path d="M22 12 A10 10 0 0 1 12 22 L12 12 Z" fill="#69f0ae" />
+                            <path d="M12 22 A10 10 0 0 1 4.93 4.93 L12 12 Z" fill="#ffb74d" />
+                            <path d="M4.93 4.93 A10 10 0 0 1 12 2 L12 12 Z" fill="#42a5f5" />
+                            <circle cx="12" cy="12" r="4.5" fill="var(--bg-color)" />
+                        </svg>
+                        <svg id="icon-back-todo" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                            <path d="M9 11l3 3L22 4"/>
+                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
                         </svg>
                     </button>
                 </div>
@@ -298,6 +306,25 @@
                                 <path d="M9 18l6-6-6-6" />
                             </svg>
                         </button>
+                        <button class="settings-item" id="btn-analytics">
+                            <div class="settings-item-left">
+                                <div class="settings-icon purple">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                        <rect x="2" y="12" width="6" height="9" rx="1.5" />
+                                        <rect x="9" y="3" width="6" height="18" rx="1.5" />
+                                        <rect x="16" y="8" width="6" height="13" rx="1.5" />
+                                    </svg>
+                                </div>
+                                <div class="settings-item-info">
+                                    <div class="settings-item-title">Статистика завдань</div>
+                                    <div class="settings-item-desc">Виконано завдань за останні 7 днів</div>
+                                </div>
+                            </div>
+                            <svg class="settings-chevron" viewBox="0 0 24 24" width="20" height="20" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M9 18l6-6-6-6" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -326,14 +353,187 @@
             </div>
         </main>
 
-        <!-- FAB Add -->
+        <!-- ================= FINANCE VIEWS ================= -->
+        <!-- View: Finance Overview (Dashboard) -->
+        <main class="content finance-tab-view" id="fin-view-overview" style="display: none;">
+            <!-- Period filter pills -->
+            <div class="fin-period-bar">
+                <button class="fin-period-pill active" data-period="month">Цей місяць</button>
+                <button class="fin-period-pill" data-period="week">Цей тиждень</button>
+                <button class="fin-period-pill" data-period="all">Весь час</button>
+            </div>
+
+            <!-- Balance Card -->
+            <div class="fin-balance-card">
+                <div class="fin-balance-header">
+                    <span class="fin-balance-sub">Баланс за період</span>
+                    <span class="fin-badge-currency">₴ UAH</span>
+                </div>
+                <div class="fin-balance-amount" id="fin-net-balance">0 ₴</div>
+                <div class="fin-balance-grid">
+                    <div class="fin-balance-col income">
+                        <div class="fin-col-label">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                            Доходи
+                        </div>
+                        <div class="fin-col-val" id="fin-total-income">+0 ₴</div>
+                    </div>
+                    <div class="fin-balance-col expense">
+                        <div class="fin-col-label">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                            Витрати
+                        </div>
+                        <div class="fin-col-val" id="fin-total-expense">-0 ₴</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Breakdown Chart Card -->
+            <div class="fin-card">
+                <div class="fin-card-header">
+                    <div class="fin-card-title-group">
+                        <span class="fin-card-icon">🍩</span>
+                        <h3>Розподіл витрат</h3>
+                    </div>
+                    <span class="fin-card-stat" id="fin-chart-total">0 ₴</span>
+                </div>
+                <div class="fin-chart-container">
+                    <canvas id="fin-donut-chart"></canvas>
+                    <div id="fin-donut-empty" class="fin-empty-chart" style="display:none;">
+                        <p>Немає витрат за обраний період</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expense Trend Line Chart Card -->
+            <div class="fin-card">
+                <div class="fin-card-header">
+                    <div class="fin-card-title-group">
+                        <span class="fin-card-icon">📈</span>
+                        <h3>Динаміка витрат</h3>
+                    </div>
+                </div>
+                <div class="fin-line-chart-container">
+                    <canvas id="fin-trend-chart"></canvas>
+                    <div id="fin-trend-empty" class="fin-empty-chart" style="display:none;">
+                        <p>Додайте витрати для побудови тренду</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top 3 Categories Card -->
+            <div class="fin-card">
+                <div class="fin-card-header">
+                    <div class="fin-card-title-group">
+                        <span class="fin-card-icon">🏆</span>
+                        <h3>Топ категорії</h3>
+                    </div>
+                </div>
+                <div class="fin-top-categories" id="fin-top-categories-list">
+                    <!-- Injected via finance.js -->
+                </div>
+            </div>
+
+            <!-- Smart Insights Card -->
+            <div class="fin-card fin-insights-card">
+                <div class="fin-card-header">
+                    <div class="fin-card-title-group">
+                        <span class="fin-card-icon">💡</span>
+                        <h3>Розумні інсайти</h3>
+                    </div>
+                </div>
+                <div class="fin-insights-list" id="fin-insights-list">
+                    <!-- Injected via finance.js -->
+                </div>
+            </div>
+        </main>
+
+        <!-- View: Finance Transactions List -->
+        <main class="content finance-tab-view" id="fin-view-transactions" style="display: none;">
+            <!-- Type Filter Tabs: Всі, Витрати, Доходи -->
+            <div class="fin-tabs-type">
+                <button class="fin-type-tab active" data-type="all">Всі</button>
+                <button class="fin-type-tab" data-type="expense">Витрати</button>
+                <button class="fin-type-tab" data-type="income">Доходи</button>
+            </div>
+
+            <!-- Search Box -->
+            <div class="search-box">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21L16.65 16.65" />
+                </svg>
+                <input type="text" id="fin-search-input" placeholder="Пошук за описом чи сумою...">
+            </div>
+
+            <!-- Date Filters (Pills) -->
+            <div class="fin-date-filters">
+                <button class="fin-date-pill" data-date="today">Сьогодні</button>
+                <button class="fin-date-pill" data-date="week">Тиждень</button>
+                <button class="fin-date-pill active" data-date="month">Місяць</button>
+                <button class="fin-date-pill" data-date="all">Всі</button>
+            </div>
+
+            <!-- Category Filter Horizontal Scroll -->
+            <div class="fin-cat-filter-scroll" id="fin-category-filter-scroll">
+                <!-- Rendered category pills -->
+            </div>
+
+            <!-- Summary Bar -->
+            <div class="fin-tx-summary" id="fin-tx-summary">
+                Показано 0 операцій
+            </div>
+
+            <!-- Transactions Grouped List -->
+            <div class="fin-tx-list" id="fin-transactions-list">
+                <!-- Grouped transactions -->
+            </div>
+        </main>
+
+        <!-- View: Finance Budgets & Goals -->
+        <main class="content finance-tab-view" id="fin-view-budgets" style="display: none;">
+            <!-- Section 1: Monthly Budgets -->
+            <div class="fin-section-header">
+                <div class="fin-section-title">
+                    <span>📊</span>
+                    <h2>Бюджети на місяць</h2>
+                </div>
+                <button class="fin-btn-secondary" id="fin-btn-add-budget">+ Ліміт</button>
+            </div>
+
+            <!-- Overall Budget Progress Card -->
+            <div class="fin-budget-overall-card" id="fin-budget-overall">
+                <!-- Overall budget card -->
+            </div>
+
+            <!-- Category Budgets List -->
+            <div class="fin-budgets-list" id="fin-budgets-list">
+                <!-- Rendered budgets -->
+            </div>
+
+            <!-- Section 2: Savings Goals -->
+            <div class="fin-section-header" style="margin-top: 20px;">
+                <div class="fin-section-title">
+                    <span>🎯</span>
+                    <h2>Цілі заощаджень</h2>
+                </div>
+                <button class="fin-btn-secondary" id="fin-btn-add-goal">+ Ціль</button>
+            </div>
+
+            <!-- Savings Goals List -->
+            <div class="fin-goals-list" id="fin-goals-list">
+                <!-- Rendered goals -->
+            </div>
+        </main>
+
+        <!-- FAB Add (Todo) -->
         <button id="fab-add" class="fab" aria-label="Додати">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 5V19M5 12H19" />
             </svg>
         </button>
 
-        <!-- Bottom Navigation -->
+        <!-- Bottom Navigation (Todo) -->
         <nav class="bottom-nav">
             <button class="nav-btn active" data-target="view-list">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
@@ -362,6 +562,44 @@
                         d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
                 </svg>
                 <span>Налаштування</span>
+            </button>
+        </nav>
+
+        <!-- Finance Floating Action Button (+) -->
+        <button id="finance-fab-add" class="fab finance-fab" aria-label="Додати операцію" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 5V19M5 12H19" />
+            </svg>
+        </button>
+
+        <!-- Finance Bottom Navigation -->
+        <nav class="bottom-nav finance-bottom-nav" id="finance-bottom-nav" style="display: none;">
+            <button class="fin-nav-btn active" data-fin-target="fin-view-overview">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="12" width="5" height="9" rx="1.5" />
+                    <rect x="9.5" y="4" width="5" height="17" rx="1.5" />
+                    <rect x="16" y="8" width="5" height="13" rx="1.5" />
+                </svg>
+                <span>Огляд</span>
+            </button>
+            <button class="fin-nav-btn" data-fin-target="fin-view-transactions">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="8" y1="6" x2="21" y2="6"/>
+                    <line x1="8" y1="12" x2="21" y2="12"/>
+                    <line x1="8" y1="18" x2="21" y2="18"/>
+                    <circle cx="4" cy="6" r="1.5" fill="currentColor"/>
+                    <circle cx="4" cy="12" r="1.5" fill="currentColor"/>
+                    <circle cx="4" cy="18" r="1.5" fill="currentColor"/>
+                </svg>
+                <span>Транзакції</span>
+            </button>
+            <button class="fin-nav-btn" data-fin-target="fin-view-budgets">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="9"/>
+                    <circle cx="12" cy="12" r="5"/>
+                    <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+                <span>Бюджети</span>
             </button>
         </nav>
 
@@ -615,6 +853,145 @@
             </div>
         </div>
 
+        <!-- ================= FINANCE SHEETS ================= -->
+        <!-- Finance Bottom Sheet: Add/Edit Transaction -->
+        <div id="fin-tx-sheet" class="bottom-sheet">
+            <div class="sheet-header">
+                <h2 id="fin-tx-sheet-title">Нова операція</h2>
+                <button id="fin-close-tx-sheet" class="icon-btn">✖</button>
+            </div>
+            <form id="fin-tx-form">
+                <div class="form-scroll-body">
+                    <input type="hidden" id="fin-tx-id">
+
+                    <!-- Type toggle: Витрата / Дохід -->
+                    <div class="fin-tx-type-toggle">
+                        <button type="button" class="fin-toggle-btn active" data-tx-type="expense" id="fin-toggle-exp">Витрата 💸</button>
+                        <button type="button" class="fin-toggle-btn" data-tx-type="income" id="fin-toggle-inc">Дохід 💰</button>
+                    </div>
+
+                    <!-- Amount Input -->
+                    <div class="fin-amount-input-box">
+                        <span class="fin-currency-sign">₴</span>
+                        <input type="number" id="fin-tx-amount" step="0.01" min="0.01" placeholder="0.00" required inputmode="decimal">
+                    </div>
+
+                    <!-- Category Picker Grid -->
+                    <div class="form-group">
+                        <label>Категорія</label>
+                        <div class="fin-category-grid" id="fin-category-grid">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Description / Note -->
+                    <div class="form-group">
+                        <label>Опис / нотатка (необов'язково)</label>
+                        <input type="text" id="fin-tx-desc" placeholder="Наприклад, Супермаркет Сільпо" maxlength="100">
+                    </div>
+
+                    <!-- Date -->
+                    <div class="form-group">
+                        <label>Дата</label>
+                        <input type="date" id="fin-tx-date" required>
+                    </div>
+                </div>
+
+                <div class="sheet-footer">
+                    <button type="button" id="fin-btn-delete-tx" class="btn btn-danger" style="display:none;">Видалити</button>
+                    <button type="submit" id="fin-btn-save-tx" class="btn btn-primary">Зберегти</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Finance Bottom Sheet: Set/Edit Budget -->
+        <div id="fin-budget-sheet" class="bottom-sheet">
+            <div class="sheet-header">
+                <h2 id="fin-budget-sheet-title">Місячний бюджет</h2>
+                <button id="fin-close-budget-sheet" class="icon-btn">✖</button>
+            </div>
+            <form id="fin-budget-form">
+                <div class="form-scroll-body">
+                    <input type="hidden" id="fin-budget-id">
+                    <div class="form-group">
+                        <label>Категорія</label>
+                        <select id="fin-budget-category" class="custom-select" required style="width:100%; padding:10px; background:var(--surface-light); color:var(--text-primary); border:1px solid var(--border-color); border-radius:12px;">
+                            <!-- Options populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Місячний ліміт (₴)</label>
+                        <input type="number" id="fin-budget-limit" min="1" step="1" placeholder="5000" required inputmode="numeric">
+                    </div>
+                </div>
+                <div class="sheet-footer">
+                    <button type="button" id="fin-btn-delete-budget" class="btn btn-danger" style="display:none;">Видалити</button>
+                    <button type="submit" class="btn btn-primary">Зберегти ліміт</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Finance Bottom Sheet: Add/Edit Savings Goal -->
+        <div id="fin-goal-sheet" class="bottom-sheet">
+            <div class="sheet-header">
+                <h2 id="fin-goal-sheet-title">Ціль заощадження</h2>
+                <button id="fin-close-goal-sheet" class="icon-btn">✖</button>
+            </div>
+            <form id="fin-goal-form">
+                <div class="form-scroll-body">
+                    <input type="hidden" id="fin-goal-id">
+                    <div class="form-group">
+                        <label>Назва цілі</label>
+                        <input type="text" id="fin-goal-title" placeholder="Новий ноутбук, Відпустка..." required maxlength="60">
+                    </div>
+                    <div class="form-group">
+                        <label>Цільова сума (₴)</label>
+                        <input type="number" id="fin-goal-target" min="1" step="1" placeholder="25000" required inputmode="numeric">
+                    </div>
+                    <div class="form-group">
+                        <label>Вже накопичено (₴)</label>
+                        <input type="number" id="fin-goal-current" min="0" step="1" placeholder="0" inputmode="numeric">
+                    </div>
+                    <div class="form-group">
+                        <label>Дедлайн (необов'язково)</label>
+                        <input type="date" id="fin-goal-deadline">
+                    </div>
+                </div>
+                <div class="sheet-footer">
+                    <button type="button" id="fin-btn-delete-goal" class="btn btn-danger" style="display:none;">Видалити</button>
+                    <button type="submit" class="btn btn-primary">Зберегти ціль</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Quick Deposit Sheet -->
+        <div id="fin-deposit-sheet" class="bottom-sheet">
+            <div class="sheet-header">
+                <h2>Поповнити скарбничку</h2>
+                <button id="fin-close-deposit-sheet" class="icon-btn">✖</button>
+            </div>
+            <form id="fin-deposit-form">
+                <div class="form-scroll-body">
+                    <input type="hidden" id="fin-deposit-goal-id">
+                    <p id="fin-deposit-goal-name" style="font-weight:600; color:var(--text-primary); margin-bottom:12px;"></p>
+                    <div class="form-group">
+                        <label>Сума поповнення (₴)</label>
+                        <input type="number" id="fin-deposit-amount" min="1" step="1" placeholder="500" required inputmode="numeric">
+                    </div>
+                    <!-- Quick preset buttons -->
+                    <div class="fin-deposit-presets">
+                        <button type="button" class="fin-preset-btn" data-amt="200">+200 ₴</button>
+                        <button type="button" class="fin-preset-btn" data-amt="500">+500 ₴</button>
+                        <button type="button" class="fin-preset-btn" data-amt="1000">+1 000 ₴</button>
+                        <button type="button" class="fin-preset-btn" data-amt="2000">+2 000 ₴</button>
+                    </div>
+                </div>
+                <div class="sheet-footer">
+                    <button type="submit" class="btn btn-primary">Поповнити</button>
+                </div>
+            </form>
+        </div>
+
         <!-- Custom Confirm Dialog -->
         <div id="custom-confirm" class="custom-confirm">
             <div class="confirm-title" id="confirm-title">Видалити?</div>
@@ -627,10 +1004,11 @@
 
     </div>
     <script src="src/audio.js?v=5"></script>
-    <script src="src/constants.js?v=6"></script>
+    <script src="src/constants.js?v=7"></script>
     <script src="src/utils.js?v=6"></script>
-    <script src="src/db.js?v=6"></script>
-    <script src="src/script.js?v=19"></script>
+    <script src="src/db.js?v=7"></script>
+    <script src="src/script.js?v=20"></script>
+    <script src="src/finance.js?v=2"></script>
 </body>
 
 </html>
