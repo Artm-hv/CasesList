@@ -75,7 +75,23 @@ export default async function handler(req, res) {
             try {
               let bodyText = reminder.body || 'Дедлайн настав! Час завершити завдання.';
               if (notif.type === 'relative' && notif.offsetMinutes > 0) {
-                  bodyText = `До дедлайну залишилось ${notif.offsetMinutes} хвилин.`;
+                  const m = notif.offsetMinutes;
+                  if (m === 1440) {
+                      bodyText = 'До дедлайну залишився 1 день.';
+                  } else if (m % 1440 === 0) {
+                      const d = m / 1440;
+                      const dWord = (d % 10 === 1 && d % 100 !== 11) ? 'день' : ([2, 3, 4].includes(d % 10) && ![12, 13, 14].includes(d % 100)) ? 'дні' : 'днів';
+                      bodyText = `До дедлайну залишилось ${d} ${dWord}.`;
+                  } else if (m === 60) {
+                      bodyText = 'До дедлайну залишилась 1 година.';
+                  } else if (m % 60 === 0) {
+                      const h = m / 60;
+                      const hWord = (h % 10 === 1 && h % 100 !== 11) ? 'година' : ([2, 3, 4].includes(h % 10) && ![12, 13, 14].includes(h % 100)) ? 'години' : 'годин';
+                      bodyText = `До дедлайну залишилось ${h} ${hWord}.`;
+                  } else {
+                      const minWord = (m % 10 === 1 && m % 100 !== 11) ? 'хвилина' : ([2, 3, 4].includes(m % 10) && ![12, 13, 14].includes(m % 100)) ? 'хвилини' : 'хвилин';
+                      bodyText = `До дедлайну залишилось ${m} ${minWord}.`;
+                  }
               }
               await webpush.sendNotification(
                 subscription,

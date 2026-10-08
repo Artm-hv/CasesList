@@ -543,6 +543,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('fin-budget-sheet')?.classList.remove('open');
         document.getElementById('fin-goal-sheet')?.classList.remove('open');
         document.getElementById('fin-deposit-sheet')?.classList.remove('open');
+        document.getElementById('fin-date-filter-sheet')?.classList.remove('open');
+        document.getElementById('fin-cat-picker-sheet')?.classList.remove('open');
+        document.getElementById('fin-categories-sheet')?.classList.remove('open');
+        document.getElementById('fin-category-form-sheet')?.classList.remove('open');
         UI.overlay.classList.remove('open');
     };
 
@@ -2284,6 +2288,10 @@ document.addEventListener('DOMContentLoaded', () => {
             let typeLabel = '';
             if (notif.type === 'relative') {
                 if (notif.offsetMinutes === 0) typeLabel = 'В момент дедлайну';
+                else if (notif.offsetMinutes === 1440) typeLabel = 'За 1 день';
+                else if (notif.offsetMinutes % 1440 === 0) typeLabel = `За ${notif.offsetMinutes / 1440} дн`;
+                else if (notif.offsetMinutes === 60) typeLabel = 'За 1 годину';
+                else if (notif.offsetMinutes % 60 === 0) typeLabel = `За ${notif.offsetMinutes / 60} год`;
                 else typeLabel = `За ${notif.offsetMinutes} хв`;
             } else {
                 typeLabel = 'Кастомний час';

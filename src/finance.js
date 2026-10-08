@@ -56,6 +56,11 @@ const FinanceApp = (() => {
         // Transactions
         typeTabs: [],
         datePills: [],
+        btnDateFilter: null,
+        filterBadge: null,
+        dateFilterSheet: null,
+        closeDateFilterSheet: null,
+        dateOptBtns: [],
         catFilterScroll: null,
         txSummary: null,
         txList: null,
@@ -75,7 +80,14 @@ const FinanceApp = (() => {
         txTypeToggleExp: null,
         txTypeToggleInc: null,
         txAmount: null,
-        txCategoryGrid: null,
+        catSelectBtn: null,
+        catSelectedEmoji: null,
+        catSelectedName: null,
+        catVal: null,
+        catPickerSheet: null,
+        closeCatPicker: null,
+        catPickerList: null,
+        catPickerTitle: null,
         txDesc: null,
         txDate: null,
         txBtnDelete: null,
@@ -106,7 +118,29 @@ const FinanceApp = (() => {
         depositGoalId: null,
         depositGoalName: null,
         depositAmount: null,
-        depositCloseSheet: null
+        depositCloseSheet: null,
+
+        // Settings & Categories Manager
+        btnOpenCategories: null,
+        categoriesSheet: null,
+        closeCategoriesSheet: null,
+        categoriesList: null,
+        tabMgrExpense: null,
+        tabMgrIncome: null,
+        btnAddCategory: null,
+        categoryFormSheet: null,
+        closeCategoryFormSheet: null,
+        categoryForm: null,
+        categoryId: null,
+        categoryName: null,
+        categoryEmoji: null,
+        categoryTypeVal: null,
+        categoryFormTypeExp: null,
+        categoryFormTypeInc: null,
+        categoryColorVal: null,
+        categoryColorPicker: null,
+        finThemeToggle: null,
+        btnResetData: null
     };
 
     // Helpers
@@ -179,7 +213,8 @@ const FinanceApp = (() => {
         UI.views = {
             'fin-view-overview': document.getElementById('fin-view-overview'),
             'fin-view-transactions': document.getElementById('fin-view-transactions'),
-            'fin-view-budgets': document.getElementById('fin-view-budgets')
+            'fin-view-budgets': document.getElementById('fin-view-budgets'),
+            'fin-view-settings': document.getElementById('fin-view-settings')
         };
 
         // Overview
@@ -198,6 +233,11 @@ const FinanceApp = (() => {
         // Transactions
         UI.typeTabs = document.querySelectorAll('.fin-type-tab');
         UI.datePills = document.querySelectorAll('.fin-date-pill');
+        UI.btnDateFilter = document.getElementById('fin-btn-date-filter');
+        UI.filterBadge = document.getElementById('fin-filter-badge');
+        UI.dateFilterSheet = document.getElementById('fin-date-filter-sheet');
+        UI.closeDateFilterSheet = document.getElementById('fin-close-date-filter-sheet');
+        UI.dateOptBtns = document.querySelectorAll('.fin-date-opt-btn');
         UI.catFilterScroll = document.getElementById('fin-category-filter-scroll');
         UI.txSummary = document.getElementById('fin-tx-summary');
         UI.txList = document.getElementById('fin-transactions-list');
@@ -217,7 +257,14 @@ const FinanceApp = (() => {
         UI.txTypeToggleExp = document.getElementById('fin-toggle-exp');
         UI.txTypeToggleInc = document.getElementById('fin-toggle-inc');
         UI.txAmount = document.getElementById('fin-tx-amount');
-        UI.txCategoryGrid = document.getElementById('fin-category-grid');
+        UI.catSelectBtn = document.getElementById('fin-cat-select-btn');
+        UI.catSelectedEmoji = document.getElementById('fin-cat-selected-emoji');
+        UI.catSelectedName = document.getElementById('fin-cat-selected-name');
+        UI.catVal = document.getElementById('fin-tx-category-val');
+        UI.catPickerSheet = document.getElementById('fin-cat-picker-sheet');
+        UI.closeCatPicker = document.getElementById('fin-close-cat-picker');
+        UI.catPickerList = document.getElementById('fin-cat-picker-list');
+        UI.catPickerTitle = document.getElementById('fin-cat-picker-title');
         UI.txDesc = document.getElementById('fin-tx-desc');
         UI.txDate = document.getElementById('fin-tx-date');
         UI.txBtnDelete = document.getElementById('fin-btn-delete-tx');
@@ -247,6 +294,28 @@ const FinanceApp = (() => {
         UI.depositGoalName = document.getElementById('fin-deposit-goal-name');
         UI.depositAmount = document.getElementById('fin-deposit-amount');
         UI.depositCloseSheet = document.getElementById('fin-close-deposit-sheet');
+
+        // Settings & Categories Manager
+        UI.btnOpenCategories = document.getElementById('fin-btn-open-categories');
+        UI.categoriesSheet = document.getElementById('fin-categories-sheet');
+        UI.closeCategoriesSheet = document.getElementById('fin-close-categories-sheet');
+        UI.categoriesList = document.getElementById('fin-categories-list');
+        UI.tabMgrExpense = document.getElementById('fin-tab-mgr-expense');
+        UI.tabMgrIncome = document.getElementById('fin-tab-mgr-income');
+        UI.btnAddCategory = document.getElementById('fin-btn-add-category');
+        UI.categoryFormSheet = document.getElementById('fin-category-form-sheet');
+        UI.closeCategoryFormSheet = document.getElementById('fin-close-category-form-sheet');
+        UI.categoryForm = document.getElementById('fin-category-form');
+        UI.categoryId = document.getElementById('fin-category-id');
+        UI.categoryName = document.getElementById('fin-category-name');
+        UI.categoryEmoji = document.getElementById('fin-category-emoji');
+        UI.categoryTypeVal = document.getElementById('fin-category-type-val');
+        UI.categoryFormTypeExp = document.getElementById('fin-form-type-exp');
+        UI.categoryFormTypeInc = document.getElementById('fin-form-type-inc');
+        UI.categoryColorVal = document.getElementById('fin-category-color-val');
+        UI.categoryColorPicker = document.getElementById('fin-category-color-picker');
+        UI.finThemeToggle = document.getElementById('fin-theme-toggle');
+        UI.btnResetData = document.getElementById('fin-btn-reset-data');
     };
 
     const setupEventListeners = () => {
@@ -299,13 +368,20 @@ const FinanceApp = (() => {
             });
         });
 
-        // Transaction Date Pills
-        UI.datePills.forEach(pill => {
-            pill.addEventListener('click', (e) => {
-                UI.datePills.forEach(p => p.classList.remove('active'));
-                e.currentTarget.classList.add('active');
-                state.txDateFilter = e.currentTarget.getAttribute('data-date');
-                renderTransactions();
+        // Transaction Date Filter (Item 5)
+        if (UI.btnDateFilter) {
+            UI.btnDateFilter.addEventListener('click', openDateFilterSheet);
+        }
+        if (UI.closeDateFilterSheet) {
+            UI.closeDateFilterSheet.addEventListener('click', () => {
+                if (UI.dateFilterSheet) UI.dateFilterSheet.classList.remove('open');
+                if (UI.overlay) UI.overlay.classList.remove('open');
+            });
+        }
+        UI.dateOptBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const dateVal = e.currentTarget.getAttribute('data-date');
+                setDateFilter(dateVal);
             });
         });
 
@@ -323,6 +399,86 @@ const FinanceApp = (() => {
         }
         if (UI.txTypeToggleInc) {
             UI.txTypeToggleInc.addEventListener('click', () => setTxFormType('income'));
+        }
+
+        // Category Picker Trigger (Item 3)
+        if (UI.catSelectBtn) {
+            UI.catSelectBtn.addEventListener('click', openCatPickerSheet);
+        }
+        if (UI.closeCatPicker) {
+            UI.closeCatPicker.addEventListener('click', () => {
+                if (UI.catPickerSheet) UI.catPickerSheet.classList.remove('open');
+            });
+        }
+
+        // Categories Manager & Settings (Item 6 & 8)
+        if (UI.btnOpenCategories) {
+            UI.btnOpenCategories.addEventListener('click', openCategoriesManagerSheet);
+        }
+        if (UI.closeCategoriesSheet) {
+            UI.closeCategoriesSheet.addEventListener('click', () => {
+                if (UI.categoriesSheet) UI.categoriesSheet.classList.remove('open');
+                if (UI.overlay) UI.overlay.classList.remove('open');
+            });
+        }
+        if (UI.tabMgrExpense) {
+            UI.tabMgrExpense.addEventListener('click', () => {
+                currentCatMgrType = 'expense';
+                UI.tabMgrExpense.classList.add('active');
+                UI.tabMgrIncome.classList.remove('active');
+                renderCategoriesManagerList();
+            });
+        }
+        if (UI.tabMgrIncome) {
+            UI.tabMgrIncome.addEventListener('click', () => {
+                currentCatMgrType = 'income';
+                UI.tabMgrIncome.classList.add('active');
+                UI.tabMgrExpense.classList.remove('active');
+                renderCategoriesManagerList();
+            });
+        }
+        if (UI.btnAddCategory) {
+            UI.btnAddCategory.addEventListener('click', openAddCategorySheet);
+        }
+        if (UI.closeCategoryFormSheet) {
+            UI.closeCategoryFormSheet.addEventListener('click', () => {
+                if (UI.categoryFormSheet) UI.categoryFormSheet.classList.remove('open');
+            });
+        }
+        if (UI.categoryFormTypeExp) {
+            UI.categoryFormTypeExp.addEventListener('click', () => {
+                UI.categoryTypeVal.value = 'expense';
+                UI.categoryFormTypeExp.classList.add('active');
+                UI.categoryFormTypeInc.classList.remove('active');
+            });
+        }
+        if (UI.categoryFormTypeInc) {
+            UI.categoryFormTypeInc.addEventListener('click', () => {
+                UI.categoryTypeVal.value = 'income';
+                UI.categoryFormTypeInc.classList.add('active');
+                UI.categoryFormTypeExp.classList.remove('active');
+            });
+        }
+        if (UI.categoryForm) {
+            UI.categoryForm.addEventListener('submit', handleCategoryFormSubmit);
+        }
+        if (UI.finThemeToggle) {
+            UI.finThemeToggle.addEventListener('change', () => {
+                if (UI.finThemeToggle.checked) {
+                    document.body.classList.remove('light-theme');
+                    localStorage.setItem('theme', 'dark');
+                    const mainToggle = document.getElementById('theme-toggle');
+                    if (mainToggle) mainToggle.checked = true;
+                } else {
+                    document.body.classList.add('light-theme');
+                    localStorage.setItem('theme', 'light');
+                    const mainToggle = document.getElementById('theme-toggle');
+                    if (mainToggle) mainToggle.checked = false;
+                }
+            });
+        }
+        if (UI.btnResetData) {
+            UI.btnResetData.addEventListener('click', handleResetData);
         }
 
         // Close Sheets
@@ -518,6 +674,12 @@ const FinanceApp = (() => {
             if (tabId === 'fin-view-overview') UI.mainTitle.textContent = 'Огляд';
             else if (tabId === 'fin-view-transactions') UI.mainTitle.textContent = 'Транзакції';
             else if (tabId === 'fin-view-budgets') UI.mainTitle.textContent = 'Бюджети';
+            else if (tabId === 'fin-view-settings') UI.mainTitle.textContent = 'Налаштування';
+        }
+
+        // Toggle FAB visibility (hide on settings)
+        if (UI.fabAdd) {
+            UI.fabAdd.style.display = (tabId === 'fin-view-settings') ? 'none' : 'flex';
         }
 
         // Update date display to current month
@@ -535,6 +697,7 @@ const FinanceApp = (() => {
         if (state.activeTab === 'fin-view-overview') renderOverview();
         else if (state.activeTab === 'fin-view-transactions') renderTransactions();
         else if (state.activeTab === 'fin-view-budgets') renderBudgetsAndGoals();
+        else if (state.activeTab === 'fin-view-settings') renderFinanceSettings();
     };
 
     // ================= DASHBOARD (OVERVIEW) =================
@@ -1202,7 +1365,10 @@ const FinanceApp = (() => {
 
         if (state.budgets.length === 0) return;
 
-        state.budgets.forEach(b => {
+        // Sort by custom order
+        state.budgets.sort((a, b) => (a.order !== undefined && b.order !== undefined ? a.order - b.order : 0));
+
+        state.budgets.forEach((b, index) => {
             const cat = getCategory(b.categoryId);
             const spent = currentMonthExpenses
                 .filter(t => t.categoryId === b.categoryId)
@@ -1223,9 +1389,13 @@ const FinanceApp = (() => {
 
             const card = document.createElement('div');
             card.className = 'fin-budget-card';
+            card.setAttribute('draggable', 'true');
+            card.dataset.budgetId = b.id;
+
             card.innerHTML = `
                 <div class="fin-budget-header">
                     <div class="fin-budget-header-left">
+                        <span style="color:var(--text-secondary); cursor:grab; font-size:13px; margin-right:2px;" title="Перетягнути для зміни порядку">⠿</span>
                         <span>${cat.emoji}</span>
                         <span>${Utils.escapeHTML(cat.name)}</span>
                     </div>
@@ -1240,7 +1410,133 @@ const FinanceApp = (() => {
                 </div>
             `;
 
+            // HTML5 Drag & Drop (Desktop)
+            card.addEventListener('dragstart', (e) => {
+                state.draggedBudgetId = b.id;
+                card.classList.add('is-dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', b.id);
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('is-dragging');
+                document.querySelectorAll('.fin-budget-card').forEach(c => {
+                    c.classList.remove('drag-target-above', 'drag-target-below');
+                });
+            });
+
+            card.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                const rect = card.getBoundingClientRect();
+                const mid = rect.top + rect.height / 2;
+                if (e.clientY < mid) {
+                    card.classList.add('drag-target-above');
+                    card.classList.remove('drag-target-below');
+                } else {
+                    card.classList.add('drag-target-below');
+                    card.classList.remove('drag-target-above');
+                }
+            });
+
+            card.addEventListener('dragleave', () => {
+                card.classList.remove('drag-target-above', 'drag-target-below');
+            });
+
+            card.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                card.classList.remove('drag-target-above', 'drag-target-below');
+                const srcId = state.draggedBudgetId || e.dataTransfer.getData('text/plain');
+                if (!srcId || srcId === b.id) return;
+
+                const fromIndex = state.budgets.findIndex(item => item.id === srcId);
+                const toIndex = state.budgets.findIndex(item => item.id === b.id);
+                if (fromIndex < 0 || toIndex < 0) return;
+
+                const [moved] = state.budgets.splice(fromIndex, 1);
+                state.budgets.splice(toIndex, 0, moved);
+
+                for (let i = 0; i < state.budgets.length; i++) {
+                    state.budgets[i].order = i;
+                    await DB.budgets('readwrite', 'put', state.budgets[i]);
+                }
+                Utils.vibrate(25);
+                renderMonthlyBudgets();
+            });
+
+            // Touch Drag & Drop (Mobile)
+            let touchTimer = null;
+            let touchStartY = 0;
+            let isTouchDragging = false;
+
+            card.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+                touchTimer = setTimeout(() => {
+                    isTouchDragging = true;
+                    state.draggedBudgetId = b.id;
+                    card.classList.add('is-dragging');
+                    Utils.vibrate(40);
+                }, 300);
+            }, { passive: true });
+
+            card.addEventListener('touchmove', (e) => {
+                if (!isTouchDragging) {
+                    if (Math.abs(e.touches[0].clientY - touchStartY) > 10) {
+                        clearTimeout(touchTimer);
+                    }
+                    return;
+                }
+                e.preventDefault();
+                const touchY = e.touches[0].clientY;
+                const elUnder = document.elementFromPoint(e.touches[0].clientX, touchY);
+                const targetCard = elUnder?.closest('.fin-budget-card');
+                document.querySelectorAll('.fin-budget-card').forEach(c => {
+                    if (c !== targetCard) c.classList.remove('drag-target-above', 'drag-target-below');
+                });
+                if (targetCard && targetCard !== card) {
+                    const rect = targetCard.getBoundingClientRect();
+                    if (touchY < rect.top + rect.height / 2) {
+                        targetCard.classList.add('drag-target-above');
+                        targetCard.classList.remove('drag-target-below');
+                    } else {
+                        targetCard.classList.add('drag-target-below');
+                        targetCard.classList.remove('drag-target-above');
+                    }
+                }
+            }, { passive: false });
+
+            card.addEventListener('touchend', async (e) => {
+                clearTimeout(touchTimer);
+                if (!isTouchDragging) return;
+                isTouchDragging = false;
+                card.classList.remove('is-dragging');
+
+                const touch = e.changedTouches[0];
+                const elUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+                const targetCard = elUnder?.closest('.fin-budget-card');
+                document.querySelectorAll('.fin-budget-card').forEach(c => c.classList.remove('drag-target-above', 'drag-target-below'));
+
+                if (targetCard && targetCard !== card && targetCard.dataset.budgetId) {
+                    const srcId = b.id;
+                    const tgtId = targetCard.dataset.budgetId;
+                    const fromIndex = state.budgets.findIndex(item => item.id === srcId);
+                    const toIndex = state.budgets.findIndex(item => item.id === tgtId);
+                    if (fromIndex >= 0 && toIndex >= 0) {
+                        const [moved] = state.budgets.splice(fromIndex, 1);
+                        state.budgets.splice(toIndex, 0, moved);
+
+                        for (let i = 0; i < state.budgets.length; i++) {
+                            state.budgets[i].order = i;
+                            await DB.budgets('readwrite', 'put', state.budgets[i]);
+                        }
+                        Utils.vibrate(30);
+                        renderMonthlyBudgets();
+                    }
+                }
+            });
+
             card.addEventListener('click', () => {
+                if (isTouchDragging) return;
                 openBudgetSheet(b);
             });
 
@@ -1320,32 +1616,55 @@ const FinanceApp = (() => {
             UI.txTypeToggleInc.classList.add('active');
             UI.txTypeToggleExp.classList.remove('active');
         }
-        renderTxCategoryGrid();
-    };
-
-    const renderTxCategoryGrid = () => {
-        if (!UI.txCategoryGrid) return;
-        UI.txCategoryGrid.innerHTML = '';
 
         const cats = state.categories.filter(c => c.type === UI.txCurrentType);
         if (cats.length > 0 && !cats.some(c => c.id === UI.txSelectedCatId)) {
             UI.txSelectedCatId = cats[0].id;
         }
+        updateSelectedCategoryDisplay();
+    };
 
-        cats.forEach(c => {
-            const item = document.createElement('div');
-            item.className = `fin-cat-grid-item ${UI.txSelectedCatId === c.id ? 'active' : ''}`;
-            item.innerHTML = `
-                <span class="fin-cat-grid-emoji">${c.emoji}</span>
-                <span class="fin-cat-grid-name">${Utils.escapeHTML(c.name)}</span>
-            `;
-            item.addEventListener('click', () => {
-                UI.txSelectedCatId = c.id;
-                document.querySelectorAll('.fin-cat-grid-item').forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
+    const updateSelectedCategoryDisplay = () => {
+        const cat = getCategory(UI.txSelectedCatId);
+        if (UI.catSelectedEmoji) UI.catSelectedEmoji.textContent = cat.emoji || '📁';
+        if (UI.catSelectedName) UI.catSelectedName.textContent = cat.name || 'Оберіть категорію';
+        if (UI.catVal) UI.catVal.value = cat.id;
+    };
+
+    const openCatPickerSheet = () => {
+        Utils.vibrate(20);
+        if (!UI.catPickerSheet || !UI.catPickerList) return;
+
+        if (UI.catPickerTitle) {
+            UI.catPickerTitle.textContent = UI.txCurrentType === 'income' ? 'Категорія доходу' : 'Категорія витрати';
+        }
+
+        UI.catPickerList.innerHTML = '';
+        const cats = state.categories.filter(c => c.type === UI.txCurrentType);
+
+        if (cats.length === 0) {
+            UI.catPickerList.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);">Категорій не знайдено</div>';
+        } else {
+            cats.forEach(c => {
+                const item = document.createElement('div');
+                item.className = `fin-cat-picker-item ${UI.txSelectedCatId === c.id ? 'active' : ''}`;
+                item.innerHTML = `
+                    <div class="fin-cat-picker-item-left">
+                        <span class="fin-cat-picker-item-emoji">${c.emoji || '📁'}</span>
+                        <span class="fin-cat-picker-item-name">${Utils.escapeHTML(c.name)}</span>
+                    </div>
+                    <span class="fin-cat-picker-item-check">✓</span>
+                `;
+                item.addEventListener('click', () => {
+                    UI.txSelectedCatId = c.id;
+                    updateSelectedCategoryDisplay();
+                    UI.catPickerSheet.classList.remove('open');
+                });
+                UI.catPickerList.appendChild(item);
             });
-            UI.txCategoryGrid.appendChild(item);
-        });
+        }
+
+        UI.catPickerSheet.classList.add('open');
     };
 
     const openTxSheet = (tx = null) => {
@@ -1362,6 +1681,7 @@ const FinanceApp = (() => {
             UI.txDate.value = tx.date || todayISO;
             UI.txSelectedCatId = tx.categoryId;
             setTxFormType(tx.type || 'expense');
+            updateSelectedCategoryDisplay();
             if (UI.txBtnDelete) UI.txBtnDelete.style.display = 'inline-block';
         } else {
             document.getElementById('fin-tx-sheet-title').textContent = 'Нова операція';
@@ -1369,8 +1689,10 @@ const FinanceApp = (() => {
             UI.txAmount.value = '';
             UI.txDesc.value = '';
             UI.txDate.value = todayISO;
-            UI.txSelectedCatId = 'food';
+            const defaultCat = state.categories.find(c => c.type === 'expense') || { id: 'food' };
+            UI.txSelectedCatId = defaultCat.id;
             setTxFormType('expense');
+            updateSelectedCategoryDisplay();
             if (UI.txBtnDelete) UI.txBtnDelete.style.display = 'none';
         }
 
@@ -1436,20 +1758,19 @@ const FinanceApp = (() => {
     const handleTxDelete = async () => {
         const id = UI.txId.value;
         if (!id) return;
-        if (confirm('Видалити цю операцію?')) {
-            await DB.transactions('readwrite', 'delete', id);
-            closeAllFinanceSheets();
-            await loadData();
-            renderActiveFinTab();
-        }
+        await DB.transactions('readwrite', 'delete', id);
+        Utils.vibrate(25);
+        closeAllFinanceSheets();
+        await loadData();
+        renderActiveFinTab();
     };
 
     const confirmDeleteTx = async (id) => {
-        if (confirm('Видалити цю операцію?')) {
-            await DB.transactions('readwrite', 'delete', id);
-            await loadData();
-            renderActiveFinTab();
-        }
+        if (!id) return;
+        await DB.transactions('readwrite', 'delete', id);
+        Utils.vibrate(25);
+        await loadData();
+        renderActiveFinTab();
     };
 
     // ================= BUDGET SHEET =================
@@ -1602,11 +1923,182 @@ const FinanceApp = (() => {
         renderActiveFinTab();
     };
 
+    // ================= DATE FILTER SHEET (Item 5) =================
+    const openDateFilterSheet = () => {
+        Utils.vibrate(20);
+        if (!UI.dateFilterSheet) return;
+        UI.dateOptBtns.forEach(btn => {
+            if (btn.getAttribute('data-date') === state.txDateFilter) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        UI.dateFilterSheet.classList.add('open');
+        if (UI.overlay) UI.overlay.classList.add('open');
+    };
+
+    const setDateFilter = (val) => {
+        state.txDateFilter = val;
+        const labels = {
+            today: 'Сьогодні',
+            week: 'Тиждень',
+            month: 'Місяць',
+            all: 'Всі'
+        };
+        if (UI.filterBadge) {
+            UI.filterBadge.textContent = labels[val] || 'Період';
+        }
+        if (UI.dateFilterSheet) UI.dateFilterSheet.classList.remove('open');
+        if (UI.overlay) UI.overlay.classList.remove('open');
+        Utils.vibrate(15);
+        renderTransactions();
+    };
+
+    // ================= FINANCE SETTINGS & CATEGORIES MANAGER (Item 6 & 8) =================
+    const FIN_COLOR_PRESETS = ['#b388ff', '#ff80ab', '#ff9e80', '#ffd180', '#ccff90', '#a7ffeb', '#80d8ff', '#82b1ff', '#FF7043', '#26A69A', '#AB47BC', '#66BB6A'];
+    let currentCatMgrType = 'expense';
+
+    const renderFinanceSettings = () => {
+        syncFinTheme();
+    };
+
+    const syncFinTheme = () => {
+        if (UI.finThemeToggle) {
+            UI.finThemeToggle.checked = !document.body.classList.contains('light-theme');
+        }
+    };
+
+    const openCategoriesManagerSheet = () => {
+        Utils.vibrate(20);
+        renderCategoriesManagerList();
+        UI.categoriesSheet.classList.add('open');
+        if (UI.overlay) UI.overlay.classList.add('open');
+    };
+
+    const renderCategoriesManagerList = () => {
+        if (!UI.categoriesList) return;
+        UI.categoriesList.innerHTML = '';
+        const cats = state.categories.filter(c => c.type === currentCatMgrType);
+
+        if (cats.length === 0) {
+            UI.categoriesList.innerHTML = '<li style="text-align:center; padding:20px; color:var(--text-secondary); list-style:none;">Немає категорій</li>';
+            return;
+        }
+
+        cats.forEach(cat => {
+            const li = document.createElement('li');
+            li.className = 'todo-item';
+            li.style.borderLeft = `4px solid ${cat.color || '#b388ff'}`;
+            li.style.padding = '12px 16px';
+            li.style.display = 'flex';
+            li.style.alignItems = 'center';
+            li.style.justifyContent = 'space-between';
+
+            li.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:22px;">${cat.emoji || '📁'}</span>
+                    <span style="font-weight:600; font-size:15px; color:var(--text-primary);">${Utils.escapeHTML(cat.name)}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button class="icon-btn fin-del-cat-btn" data-id="${cat.id}" title="Видалити" style="color:var(--danger-color); padding:6px;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+
+            li.querySelector('.fin-del-cat-btn').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await deleteFinanceCategory(cat.id);
+            });
+
+            UI.categoriesList.appendChild(li);
+        });
+    };
+
+    const openAddCategorySheet = () => {
+        Utils.vibrate(20);
+        UI.categoryForm.reset();
+        UI.categoryId.value = '';
+        UI.categoryTypeVal.value = currentCatMgrType;
+        if (currentCatMgrType === 'expense') {
+            UI.categoryFormTypeExp.classList.add('active');
+            UI.categoryFormTypeInc.classList.remove('active');
+        } else {
+            UI.categoryFormTypeInc.classList.add('active');
+            UI.categoryFormTypeExp.classList.remove('active');
+        }
+        UI.categoryColorVal.value = FIN_COLOR_PRESETS[0];
+        renderFinColorPicker();
+        UI.categoryFormSheet.classList.add('open');
+    };
+
+    const renderFinColorPicker = () => {
+        if (!UI.categoryColorPicker) return;
+        UI.categoryColorPicker.innerHTML = '';
+        FIN_COLOR_PRESETS.forEach(hex => {
+            const circle = document.createElement('div');
+            circle.className = `color-option ${UI.categoryColorVal.value === hex ? 'selected' : ''}`;
+            circle.style.backgroundColor = hex;
+            circle.addEventListener('click', () => {
+                UI.categoryColorVal.value = hex;
+                UI.categoryColorPicker.querySelectorAll('.color-option').forEach(c => c.classList.remove('selected'));
+                circle.classList.add('selected');
+            });
+            UI.categoryColorPicker.appendChild(circle);
+        });
+    };
+
+    const handleCategoryFormSubmit = async (e) => {
+        e.preventDefault();
+        const name = UI.categoryName.value.trim();
+        if (!name) return;
+        const id = UI.categoryId.value || ('fin_cat_' + Date.now());
+        const emoji = UI.categoryEmoji.value.trim() || '📁';
+        const color = UI.categoryColorVal.value || '#b388ff';
+        const type = UI.categoryTypeVal.value || currentCatMgrType;
+
+        const newCat = { id, name, emoji, color, type };
+        await DB.finCategories('readwrite', 'put', newCat);
+        await loadData();
+        renderCategoriesManagerList();
+        renderActiveFinTab();
+        Utils.vibrate(25);
+        UI.categoryFormSheet.classList.remove('open');
+    };
+
+    const deleteFinanceCategory = async (id) => {
+        await DB.finCategories('readwrite', 'delete', id);
+        await loadData();
+        renderCategoriesManagerList();
+        renderActiveFinTab();
+        Utils.vibrate(25);
+    };
+
+    const handleResetData = async () => {
+        if (confirm('Справді видалити всі записи про операції? Бюджети та цілі збережуться.')) {
+            const txs = await DB.transactions('readonly', 'getAll');
+            for (const tx of txs) {
+                await DB.transactions('readwrite', 'delete', tx.id);
+            }
+            await loadData();
+            renderActiveFinTab();
+            alert('Історію операцій очищено.');
+        }
+    };
+
     const closeAllFinanceSheets = () => {
         if (UI.txSheet) UI.txSheet.classList.remove('open');
         if (UI.budgetSheet) UI.budgetSheet.classList.remove('open');
         if (UI.goalSheet) UI.goalSheet.classList.remove('open');
         if (UI.depositSheet) UI.depositSheet.classList.remove('open');
+        if (UI.dateFilterSheet) UI.dateFilterSheet.classList.remove('open');
+        if (UI.catPickerSheet) UI.catPickerSheet.classList.remove('open');
+        if (UI.categoriesSheet) UI.categoriesSheet.classList.remove('open');
+        if (UI.categoryFormSheet) UI.categoryFormSheet.classList.remove('open');
         if (UI.overlay && state.active) {
             UI.overlay.classList.remove('open');
         }
